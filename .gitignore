@@ -1,0 +1,45 @@
+# Environment and secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Optional: cached embedding vectors (recomputed locally)
+embeddings/*.npy
+
+# Cursor / local IDE
+.cursor/
+.qodo/
+.qoder/
+
+# Obsidian local workspace
+.obsidian/
+
+# Generated build artifacts
+data/graph.json
+data/graph_view.html
+graph_component.html
+
+# Screenshots (local reference only)
+screenshot_*.png
+
+# Pyright local config
+pyrightconfig.json
+
+# Local captures (personal notes; regenerate with capture.py)
+raw/*
+!raw/.gitkeep
