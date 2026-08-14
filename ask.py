@@ -74,6 +74,14 @@ class AskResult:
 def _get_groq_client() -> Groq:
     load_dotenv()
     api_key = os.environ.get("GROQ_API_KEY")
+    # Fallback: Streamlit Community Cloud injects secrets via st.secrets,
+    # not via environment variables.  Check there if the env var is absent.
+    if not api_key:
+        try:
+            import streamlit as st
+            api_key = st.secrets.get("GROQ_API_KEY")
+        except Exception:
+            pass
     if not api_key:
         raise RuntimeError("GROQ_API_KEY is not set. Add it to .env (see .env.example).")
     return Groq(api_key=api_key)

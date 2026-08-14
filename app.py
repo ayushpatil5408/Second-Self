@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from config import GRAPH_PATH, PROJECT_ROOT, RAG_TOP_K
 
@@ -183,6 +184,19 @@ def build_graph_html(graph: dict) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _is_cloud_env() -> bool:
+    """Return True when running on Streamlit Community Cloud."""
+    import os
+    return (
+        os.environ.get("STREAMLIT_SHARING_MODE") == "streamlit-sharing"
+        or os.environ.get("IS_CLOUD", "").lower() in {"1", "true", "yes"}
+    )
+
+
+# ---------------------------------------------------------------------------
 # Sidebar
 # ---------------------------------------------------------------------------
 
@@ -196,6 +210,16 @@ def _clear_all_caches() -> None:
 def render_capture_section() -> None:
     """Capture new notes or links from the sidebar and optionally run the pipeline."""
     st.markdown("### Capture")
+
+    # Cloud-safe notice: Streamlit Community Cloud has no persistent disk.
+    # Captures written here survive the session but are lost on next deploy/restart.
+    if not (PROJECT_ROOT / "raw").is_mount() and _is_cloud_env():
+        st.info(
+            "⚠️ **Streamlit Cloud**: captures written here are not persisted across "
+            "restarts. Run the pipeline locally and push `wiki/` + `data/graph.json` "
+            "to GitHub to update the deployed app.",
+            icon="☁️",
+        )
 
     capture_mode = st.radio(
         "Capture type",
@@ -391,7 +415,7 @@ def render_graph(graph: dict) -> None:
         return
 
     html = build_graph_html(graph)
-    st.iframe(html, height=GRAPH_HEIGHT)
+    components.html(html, height=GRAPH_HEIGHT, scrolling=False)
 
 
 # ---------------------------------------------------------------------------

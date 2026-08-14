@@ -1,0 +1,345 @@
+{
+  "nodes": [
+    {
+      "id": "33500dbe",
+      "label": "Duplicate Test Note For Append Only Verification",
+      "para": "Projects",
+      "tags": [
+        "duplicate",
+        "test",
+        "append-only",
+        "verification"
+      ],
+      "summary": "Duplicate test note for append-only verification",
+      "content_preview": "Duplicate test note for append-only verification",
+      "path": "wiki/Projects/duplicate-test-note-for-append-only-verification.md"
+    },
+    {
+      "id": "245a47ac",
+      "label": "Para Method For Secondself",
+      "para": "Projects",
+      "tags": [
+        "para",
+        "method",
+        "secondself",
+        "productivity",
+        "organization"
+      ],
+      "summary": "Introduction to the PARA method for organizing work and projects",
+      "content_preview": "Journal: PARA method feels right for SecondSelf - Projects for active builds, Areas for ongoing responsibilities, Resources for saved articles, Archives for done work. ## Related Notes [[para-metho...",
+      "path": "wiki/Projects/para-method-for-secondself.md"
+    },
+    {
+      "id": "01e209cb",
+      "label": "Para Method Simple System For Organizing Digital Life",
+      "para": "Projects",
+      "tags": [
+        "para",
+        "organization",
+        "productivity",
+        "digital-life",
+        "system"
+      ],
+      "summary": "Simple system for organizing digital life",
+      "content_preview": "URL: https://fortelabs.com/blog/para/ TITLE: The PARA Method: The Simple System for Organizing Your Digital Life in Seconds https://fortelabs.com/blog/para/ ## Related Notes [[para-method-for-secon...",
+      "path": "wiki/Projects/para-method-simple-system-for-organizing-digital-life.md"
+    },
+    {
+      "id": "070f0d2d",
+      "label": "Run Pipeline After Phase 2",
+      "para": "Projects",
+      "tags": [
+        "pipeline",
+        "classification",
+        "linking",
+        "raw-items",
+        "stdin"
+      ],
+      "summary": "Run pipeline.py after Phase 2 to classify and link new raw items.",
+      "content_preview": "Quick stdin capture: remember to run pipeline.py after Phase 2 to classify and link new raw items. ## Related Notes [[wire-groq-api-key-in-env-for-phase-2-pipeline]] [[groq-quickstart-documentation]]",
+      "path": "wiki/Projects/run-pipeline-after-phase-2.md"
+    },
+    {
+      "id": "6f874ddc",
+      "label": "Second Self",
+      "para": "Projects",
+      "tags": [
+        "secondself",
+        "ai",
+        "secondbrain",
+        "knowledgeorganization",
+        "graphdatabase"
+      ],
+      "summary": "Personal AI second brain for capturing and organizing knowledge",
+      "content_preview": "# SecondSelf Your personal AI second brain — capture anything, let AI organize it, explore it as a graph, and ask questions over your own knowledge. ## Status | Phase | Name | Status | |-------|---...",
+      "path": "wiki/Projects/second-self.md"
+    },
+    {
+      "id": "d0add7f5",
+      "label": "Secondself Phase 1 Goal",
+      "para": "Projects",
+      "tags": [
+        "self",
+        "capture",
+        "notes",
+        "links",
+        "files"
+      ],
+      "summary": "SecondSelf Phase 1 goal: capture notes, links, and files into raw/ with timestamp and unique ID.",
+      "content_preview": "SecondSelf Phase 1 goal: one command to capture notes, links, and files into raw/ with timestamp and unique ID. ## Related Notes [[para-method-simple-system-for-organizing-digital-life]] [[para-met...",
+      "path": "wiki/Projects/secondself-phase-1-goal.md"
+    },
+    {
+      "id": "1de41b62",
+      "label": "Sentence Transformers Auto Linking Between Wiki Notes",
+      "para": "Projects",
+      "tags": [
+        "sentence-transformers",
+        "all-mini-lm-l6-v2",
+        "auto-linking",
+        "wiki-notes",
+        "embedding"
+      ],
+      "summary": "Use sentence-transformers for auto-linking between wiki notes",
+      "content_preview": "Idea: use sentence-transformers all-MiniLM-L6-v2 for embedding-based auto-linking between wiki notes at 0.75 cosine similarity threshold.",
+      "path": "wiki/Projects/sentence-transformers-auto-linking-between-wiki-notes.md"
+    },
+    {
+      "id": "1c68db24",
+      "label": "Week 3 Milestone Graph Export",
+      "para": "Projects",
+      "tags": [
+        "milestone",
+        "build-graphpy",
+        "graphjson",
+        "visualization",
+        "week3"
+      ],
+      "summary": "Week 3 milestone: export graph for visualization",
+      "content_preview": "Week 3 milestone: build_graph.py exports graph.json for vis-network visualization.",
+      "path": "wiki/Projects/week-3-milestone-graph-export.md"
+    },
+    {
+      "id": "a83ab779",
+      "label": "Wire Groq Api Key In Env For Phase 2 Pipeline",
+      "para": "Projects",
+      "tags": [
+        "classification",
+        "pipeline",
+        "groq",
+        "api",
+        "env"
+      ],
+      "summary": "Wire Groq API key in .env for Phase 2 pipeline",
+      "content_preview": "Todo: wire Groq API key in .env before starting Phase 2 classification pipeline. ## Related Notes [[run-pipeline-after-phase-2]] [[groq-quickstart-documentation]]",
+      "path": "wiki/Projects/wire-groq-api-key-in-env-for-phase-2-pipeline.md"
+    },
+    {
+      "id": "8b3cbead",
+      "label": "Groq Quickstart Documentation",
+      "para": "Resources",
+      "tags": [
+        "groq",
+        "docs",
+        "quickstart",
+        "tutorial",
+        "api"
+      ],
+      "summary": "Groq quickstart documentation",
+      "content_preview": "URL: https://console.groq.com/docs/quickstart TITLE: Quickstart - GroqDocs https://console.groq.com/docs/quickstart ## Related Notes [[wire-groq-api-key-in-env-for-phase-2-pipeline]] [[run-pipeline...",
+      "path": "wiki/Resources/groq-quickstart-documentation.md"
+    },
+    {
+      "id": "b90d4b51",
+      "label": "Linkedin Profile Url",
+      "para": "Resources",
+      "tags": [
+        "linkedin",
+        "profile",
+        "contact"
+      ],
+      "summary": "LinkedIn profile URL",
+      "content_preview": "URL: https://www.linkedin.com/in/ayush-patil-36ba05411/ This is my LinkedIn profile URL https://www.linkedin.com/in/ayush-patil-36ba05411/ This is my LinkedIn profile URL",
+      "path": "wiki/Resources/linkedin-profile-url.md"
+    },
+    {
+      "id": "cc7134e7",
+      "label": "Machine Learning Subset Of Ai Cc7134E7",
+      "para": "Resources",
+      "tags": [
+        "machine-learning",
+        "ai",
+        "supervised-learning",
+        "unsupervised-learning",
+        "reinforcement-learning"
+      ],
+      "summary": "Subset of AI focusing on data-driven system building",
+      "content_preview": "Machine learning is a subset of AI that focuses on building systems that learn from data. Key concepts include supervised learning, unsupervised learning, and reinforcement learning. ## Related Not...",
+      "path": "wiki/Resources/machine-learning-subset-of-ai-cc7134e7.md"
+    },
+    {
+      "id": "4eba605f",
+      "label": "Machine Learning Subset Of Ai",
+      "para": "Resources",
+      "tags": [
+        "machine-learning",
+        "ai",
+        "supervised-learning",
+        "unsupervised-learning",
+        "reinforcement-learning"
+      ],
+      "summary": "Subset of AI that learns from data",
+      "content_preview": "Machine learning is a subset of AI that focuses on building systems that learn from data. Key concepts include supervised learning, unsupervised learning, and reinforcement learning. ## Related Not...",
+      "path": "wiki/Resources/machine-learning-subset-of-ai.md"
+    },
+    {
+      "id": "83dd5bf1",
+      "label": "Pretrained Models For Sentence Transformers",
+      "para": "Resources",
+      "tags": [
+        "pretrained",
+        "models",
+        "sentence",
+        "transformers",
+        "sbert"
+      ],
+      "summary": "Pretrained models for sentence transformers",
+      "content_preview": "URL: https://www.sbert.net/docs/pretrained_models.html TITLE: Pretrained Models &mdash; Sentence Transformers documentation https://www.sbert.net/docs/pretrained_models.html",
+      "path": "wiki/Resources/pretrained-models-for-sentence-transformers.md"
+    },
+    {
+      "id": "f46ebb7e",
+      "label": "Python Pathlib Filesystem Paths",
+      "para": "Resources",
+      "tags": [
+        "python",
+        "pathlib",
+        "filesystem",
+        "paths"
+      ],
+      "summary": "Python 3.14.6 documentation for pathlib",
+      "content_preview": "URL: https://docs.python.org/3/library/pathlib.html TITLE: pathlib â Object-oriented filesystem paths &#8212; Python 3.14.6 documentation https://docs.python.org/3/library/pathlib.html",
+      "path": "wiki/Resources/python-pathlib-filesystem-paths.md"
+    },
+    {
+      "id": "e9589455",
+      "label": "Secondself Shared Configuration",
+      "para": "Resources",
+      "tags": [
+        "python",
+        "configuration",
+        "secondself"
+      ],
+      "summary": "Shared configuration for SecondSelf project",
+      "content_preview": "\"\"\"Shared configuration for SecondSelf.\"\"\" from __future__ import annotations import sys from pathlib import Path MIN_PYTHON_VERSION = (3, 10) PROJECT_ROOT = Path(__file__).resolve().parent RAW_DIR...",
+      "path": "wiki/Resources/secondself-shared-configuration.md"
+    },
+    {
+      "id": "c0e41db7",
+      "label": "Top Skills For Developers",
+      "para": "Resources",
+      "tags": [
+        "python",
+        "object-oriented-programming",
+        "cybersecurity",
+        "sql",
+        "problem-solving"
+      ],
+      "summary": "Key skills for a developer",
+      "content_preview": "Top skills Python (Programming Language) • Object-Oriented Programming (OOP) • Cybersecurity • SQL • Problem Solving As per uploaded in LinkedIn profile ## Related Notes [[top-skills-for-developers...",
+      "path": "wiki/Resources/top-skills-for-developers.md"
+    }
+  ],
+  "edges": [
+    {
+      "source": "245a47ac",
+      "target": "01e209cb",
+      "weight": 0.7022,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "245a47ac",
+      "target": "d0add7f5",
+      "weight": 0.5551,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "01e209cb",
+      "target": "245a47ac",
+      "weight": 0.7022,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "01e209cb",
+      "target": "d0add7f5",
+      "weight": 0.5853,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "070f0d2d",
+      "target": "8b3cbead",
+      "weight": 0.7508,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "070f0d2d",
+      "target": "a83ab779",
+      "weight": 0.8428,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "d0add7f5",
+      "target": "01e209cb",
+      "weight": 0.5853,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "d0add7f5",
+      "target": "245a47ac",
+      "weight": 0.5551,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "a83ab779",
+      "target": "070f0d2d",
+      "weight": 0.8428,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "a83ab779",
+      "target": "8b3cbead",
+      "weight": 0.8567,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "8b3cbead",
+      "target": "070f0d2d",
+      "weight": 0.7508,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "8b3cbead",
+      "target": "a83ab779",
+      "weight": 0.8567,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "cc7134e7",
+      "target": "4eba605f",
+      "weight": 0.9975,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "4eba605f",
+      "target": "cc7134e7",
+      "weight": 0.9975,
+      "type": "semantic_similarity"
+    }
+  ],
+  "meta": {
+    "node_count": 17,
+    "edge_count": 14,
+    "generated_at": "2026-08-14T19:04:30.987944+00:00",
+    "source": "SecondSelf build_graph.py"
+  }
+}

@@ -18,8 +18,8 @@ env/
 .DS_Store
 Thumbs.db
 
-# Optional: cached embedding vectors (recomputed locally)
-embeddings/*.npy
+# Embedding vectors — committed so Streamlit Cloud avoids cold-start recomputation
+# embeddings/*.npy
 
 # Cursor / local IDE
 .cursor/
@@ -30,7 +30,7 @@ embeddings/*.npy
 .obsidian/
 
 # Generated build artifacts
-data/graph.json
+# data/graph.json     <- committed so Streamlit Cloud has it on deploy
 data/graph_view.html
 graph_component.html
 
@@ -43,3 +43,22 @@ pyrightconfig.json
 # Local captures (personal notes; regenerate with capture.py)
 raw/*
 !raw/.gitkeep
+
+# Wiki — Obsidian workspace metadata (local only, not needed on cloud)
+wiki/.obsidian/
+
+# Wiki — binary attachments and media (keep .md notes; ignore everything else)
+wiki/**/*.png
+wiki/**/*.jpg
+wiki/**/*.jpeg
+wiki/**/*.gif
+wiki/**/*.webp
+wiki/**/*.svg
+wiki/**/*.pdf
+wiki/**/*.mp3
+wiki/**/*.mp4
+wiki/**/*.mov
+wiki/**/*.zip
+wiki/**/*.docx
+wiki/**/*.xlsx
+wiki/**/*.pptx
