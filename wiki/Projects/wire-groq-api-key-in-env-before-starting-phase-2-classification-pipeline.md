@@ -7,13 +7,12 @@ links:
 - 8b3cbead
 para: Projects
 raw_ref: raw/20260728_162619_a83ab779.txt
-summary: Wire Groq API key in .env for Phase 2 pipeline
+summary: Wire Groq API key in .env before starting Phase 2 classification pipeline.
 tags:
-- classification
-- pipeline
+- todo
 - groq
 - api
-- env
+- pipeline
 ---
 
 Todo: wire Groq API key in .env before starting Phase 2 classification pipeline.
@@ -21,4 +20,4 @@ Todo: wire Groq API key in .env before starting Phase 2 classification pipeline.
 ## Related Notes
 
 [[run-pipeline-after-phase-2]]
-[[groq-quickstart-documentation]]
+[[quickstart-groqdocs]]

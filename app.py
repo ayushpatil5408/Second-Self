@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -285,6 +286,114 @@ def render_capture_section() -> None:
             st.error(f"Capture failed: {exc}")
 
 
+def _save_api_key_to_env(api_key: str, model: str) -> None:
+    """Persist API key and model to .env and .streamlit/secrets.toml."""
+    env_file = PROJECT_ROOT / ".env"
+    lines = []
+    has_groq = False
+    has_model = False
+    if env_file.exists():
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            if line.strip().startswith("GROQ_API_KEY="):
+                lines.append(f'GROQ_API_KEY="{api_key}"')
+                has_groq = True
+            elif line.strip().startswith("LLM_MODEL="):
+                lines.append(f'LLM_MODEL="{model}"')
+                has_model = True
+            else:
+                lines.append(line)
+    if not has_groq:
+        lines.append(f'GROQ_API_KEY="{api_key}"')
+    if not has_model:
+        lines.append(f'LLM_MODEL="{model}"')
+
+    env_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    # Also update .streamlit/secrets.toml if present
+    secrets_file = PROJECT_ROOT / ".streamlit" / "secrets.toml"
+    if secrets_file.exists():
+        s_lines = []
+        for line in secrets_file.read_text(encoding="utf-8").splitlines():
+            if line.strip().startswith("GROQ_API_KEY"):
+                s_lines.append(f'GROQ_API_KEY = "{api_key}"')
+            else:
+                s_lines.append(line)
+        secrets_file.write_text("\n".join(s_lines) + "\n", encoding="utf-8")
+
+
+def render_api_settings_section() -> None:
+    """Render the API Key and model settings in the sidebar."""
+    with st.expander("🔑 Groq API & Model Settings", expanded=False):
+        from ask import resolve_groq_api_key, validate_groq_api_key
+
+        current_key = resolve_groq_api_key() or ""
+        is_configured = bool(current_key)
+
+        if is_configured:
+            masked = current_key[:6] + "..." + current_key[-4:] if len(current_key) > 12 else "******"
+            st.caption(f"Active Key: `{masked}`")
+        else:
+            st.caption("Status: 🔴 No valid API key configured")
+
+        input_key = st.text_input(
+            "Groq API Key",
+            value=st.session_state.get("groq_api_key", current_key),
+            type="password",
+            placeholder="gsk_...",
+            key="groq_key_input_box",
+            help="Get a free key from console.groq.com/keys",
+        )
+
+        model_options = [
+            "llama-3.1-8b-instant",
+            "llama-3.3-70b-versatile",
+            "mixtral-8x7b-32768",
+        ]
+        curr_model = st.session_state.get("groq_model") or os.environ.get("LLM_MODEL", "llama-3.1-8b-instant")
+        if curr_model not in model_options:
+            curr_model = "llama-3.1-8b-instant"
+
+        chosen_model = st.selectbox(
+            "Model",
+            options=model_options,
+            index=model_options.index(curr_model),
+            key="groq_model_box",
+        )
+
+        col_save, col_clear = st.columns([1, 1])
+        with col_save:
+            if st.button("Save & Test", use_container_width=True, type="primary", key="save_groq_key_btn"):
+                key_clean = input_key.strip()
+                if not key_clean:
+                    st.warning("Please enter an API key.")
+                else:
+                    with st.spinner("Verifying key with Groq..."):
+                        valid, message = validate_groq_api_key(key_clean)
+                    if valid:
+                        st.session_state["groq_api_key"] = key_clean
+                        st.session_state["groq_model"] = chosen_model
+                        os.environ["GROQ_API_KEY"] = key_clean
+                        os.environ["LLM_MODEL"] = chosen_model
+                        _save_api_key_to_env(key_clean, chosen_model)
+                        st.success("✅ Connected & saved!")
+                        st.rerun()
+                    else:
+                        st.error(f"❌ {message}")
+
+        with col_clear:
+            if st.button("Clear", use_container_width=True, key="clear_groq_key_btn"):
+                st.session_state["groq_api_key"] = ""
+                os.environ.pop("GROQ_API_KEY", None)
+                _save_api_key_to_env("", chosen_model)
+                st.info("API Key cleared.")
+                st.rerun()
+
+        st.markdown(
+            "👉 [Get a free Groq API key](https://console.groq.com/keys)",
+            unsafe_allow_html=True,
+        )
+
+
 def render_sidebar(graph: dict) -> None:
     """Populate the Streamlit sidebar with stats, capture form, and PARA breakdown."""
     with st.sidebar:
@@ -330,6 +439,11 @@ def render_sidebar(graph: dict) -> None:
             st.warning("No graph found. Capture notes below and run the pipeline to build one.")
             st.markdown("---")
 
+        # --- API Key settings section ---
+        render_api_settings_section()
+
+        st.markdown("---")
+
         # --- Capture section (always visible) ---
         render_capture_section()
 
@@ -372,11 +486,20 @@ def render_ask_section() -> None:
             st.info("Please type a question and press **Ask**.")
         else:
             with st.spinner("Searching your notes and synthesizing an answer..."):
-                index = get_wiki_index()
-                from ask import ask as ask_question
-                st.session_state["ask_result"] = ask_question(
-                    question, top_k=RAG_TOP_K, index=index
-                )
+                try:
+                    index = get_wiki_index()
+                    from ask import ask as ask_question
+                    active_key = st.session_state.get("groq_api_key")
+                    active_model = st.session_state.get("groq_model")
+                    st.session_state["ask_result"] = ask_question(
+                        question,
+                        top_k=RAG_TOP_K,
+                        index=index,
+                        api_key=active_key,
+                        model=active_model,
+                    )
+                except Exception as exc:
+                    st.error(f"Query error: {exc}")
 
     # Render any previous or just-computed answer
     result = st.session_state.get("ask_result")
@@ -384,6 +507,12 @@ def render_ask_section() -> None:
         st.markdown("---")
         st.markdown("### Answer")
         st.markdown(result.answer)
+
+        if "Invalid or unconfigured Groq API Key" in result.answer:
+            st.info(
+                "💡 **Groq API Tip**: Enter your Groq API key in the sidebar under **🔑 Groq API & Model Settings** "
+                "or update your `.env` file to enable conversational AI synthesis. ([Get a free key here](https://console.groq.com/keys))"
+            )
 
         if result.sources:
             with st.expander(f"Sources ({len(result.sources)} notes)", expanded=False):

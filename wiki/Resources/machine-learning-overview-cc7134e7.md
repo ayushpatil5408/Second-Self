@@ -6,7 +6,8 @@ links:
 - 4eba605f
 para: Resources
 raw_ref: raw/20260729_232008_cc7134e7.txt
-summary: Subset of AI focusing on data-driven system building
+summary: Overview of machine learning, covering supervised, unsupervised, and reinforcement
+  learning.
 tags:
 - machine-learning
 - ai
@@ -19,4 +20,4 @@ Machine learning is a subset of AI that focuses on building systems that learn f
 
 ## Related Notes
 
-[[machine-learning-subset-of-ai]]
+[[machine-learning-overview]]

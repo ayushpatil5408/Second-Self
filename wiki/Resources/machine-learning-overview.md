@@ -6,7 +6,7 @@ links:
 - cc7134e7
 para: Resources
 raw_ref: raw/20260729_231857_4eba605f.txt
-summary: Subset of AI that learns from data
+summary: 'Overview of machine learning concepts: supervised, unsupervised, reinforcement.'
 tags:
 - machine-learning
 - ai
@@ -19,4 +19,4 @@ Machine learning is a subset of AI that focuses on building systems that learn f
 
 ## Related Notes
 
-[[machine-learning-subset-of-ai-cc7134e7]]
+[[machine-learning-overview-cc7134e7]]

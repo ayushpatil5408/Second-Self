@@ -71,20 +71,23 @@ class ClassificationResult:
     slug: str
 
 
-def _get_groq_client() -> Groq:
-    load_dotenv()
-    api_key = os.environ.get("GROQ_API_KEY")
-    # Fallback: Streamlit Community Cloud injects secrets via st.secrets,
-    # not via environment variables.  Check there if the env var is absent.
-    if not api_key:
-        try:
-            import streamlit as st
-            api_key = st.secrets.get("GROQ_API_KEY")
-        except Exception:
-            pass
-    if not api_key:
-        raise RuntimeError("GROQ_API_KEY is not set. Add it to .env (see .env.example).")
-    return Groq(api_key=api_key)
+def _get_groq_client(api_key: str | None = None) -> Groq:
+    """Initialize and return a Groq client with API key from env, session, or secrets."""
+    from ask import resolve_groq_api_key
+
+    resolved = resolve_groq_api_key(api_key)
+    if not resolved:
+        error_msg = (
+            "GROQ_API_KEY is not set or is invalid.\n"
+            "Options:\n"
+            "1. Local: Add GROQ_API_KEY to .env file\n"
+            "2. Streamlit UI: Add GROQ_API_KEY in the sidebar\n"
+            "3. Streamlit Cloud: Add GROQ_API_KEY in Secrets tab\n"
+            "4. Docker/Container: Set GROQ_API_KEY environment variable"
+        )
+        raise RuntimeError(error_msg)
+
+    return Groq(api_key=resolved, timeout=15.0)
 
 
 def normalize_raw_ref(raw_ref: str | Path) -> str:
@@ -279,6 +282,9 @@ def call_llm(content: str, *, retry: bool = False) -> dict[str, Any]:
             return parse_llm_json(message)
         except Exception as exc:
             status = getattr(exc, "status_code", None)
+            err_str = str(exc)
+            if status == 401 or "invalid_api_key" in err_str.lower() or "authentication" in err_str.lower():
+                raise RuntimeError("Invalid Groq API key") from exc
             if status == 429 and attempt < 2:
                 time.sleep(2**attempt)
                 continue

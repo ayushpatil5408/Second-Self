@@ -5,13 +5,13 @@ id: 1c68db24
 links: []
 para: Projects
 raw_ref: raw/20260728_162650_1c68db24.txt
-summary: 'Week 3 milestone: export graph for visualization'
+summary: 'Week 3 milestone: build_graph.py exports graph.json for vis-network visualization.'
 tags:
-- milestone
-- build-graphpy
-- graphjson
+- graph
 - visualization
-- week3
+- python
+- milestone
+- vis-network
 ---
 
 Week 3 milestone: build_graph.py exports graph.json for vis-network visualization.

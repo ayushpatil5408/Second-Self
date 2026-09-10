@@ -7,13 +7,13 @@ links:
 - 070f0d2d
 para: Resources
 raw_ref: raw/20260728_162637_8b3cbead.txt
-summary: Groq quickstart documentation
+summary: Quickstart guide for GroqDocs API.
 tags:
 - groq
 - docs
 - quickstart
-- tutorial
 - api
+- ai
 ---
 
 URL: https://console.groq.com/docs/quickstart
@@ -23,5 +23,5 @@ https://console.groq.com/docs/quickstart
 
 ## Related Notes
 
-[[wire-groq-api-key-in-env-for-phase-2-pipeline]]
+[[wire-groq-api-key-in-env-before-starting-phase-2-classification-pipeline]]
 [[run-pipeline-after-phase-2]]

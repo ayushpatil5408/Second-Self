@@ -5,13 +5,13 @@ id: 83dd5bf1
 links: []
 para: Resources
 raw_ref: raw/20260728_162640_83dd5bf1.txt
-summary: Pretrained models for sentence transformers
+summary: Documentation page on pretrained models for Sentence Transformers.
 tags:
-- pretrained
-- models
-- sentence
+- sentence-transformers
+- pretrained-models
+- nlp
+- documentation
 - transformers
-- sbert
 ---
 
 URL: https://www.sbert.net/docs/pretrained_models.html

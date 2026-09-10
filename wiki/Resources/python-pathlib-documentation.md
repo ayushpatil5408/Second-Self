@@ -5,12 +5,12 @@ id: f46ebb7e
 links: []
 para: Resources
 raw_ref: raw/20260728_162635_f46ebb7e.txt
-summary: Python 3.14.6 documentation for pathlib
+summary: Python pathlib documentation page
 tags:
 - python
 - pathlib
 - filesystem
-- paths
+- documentation
 ---
 
 URL: https://docs.python.org/3/library/pathlib.html

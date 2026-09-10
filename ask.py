@@ -68,23 +68,76 @@ class AskResult:
 
 
 # ---------------------------------------------------------------------------
-# Groq client
+# Groq client & API key handling
 # ---------------------------------------------------------------------------
 
-def _get_groq_client() -> Groq:
-    load_dotenv()
-    api_key = os.environ.get("GROQ_API_KEY")
-    # Fallback: Streamlit Community Cloud injects secrets via st.secrets,
-    # not via environment variables.  Check there if the env var is absent.
-    if not api_key:
+DUMMY_API_KEYS = {
+    "your-groq-api-key-here",
+    "gsk_xxxxxxxxxxxxxxxxxxxx",
+    "gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+}
+
+
+def resolve_groq_api_key(api_key: str | None = None) -> str | None:
+    """Resolve Groq API key from parameter, Streamlit session state, env, or secrets."""
+    if api_key and api_key.strip() and api_key.strip() not in DUMMY_API_KEYS:
+        return api_key.strip()
+
+    # Check Streamlit session state only if inside an active Streamlit runner
+    if "streamlit" in sys.modules:
         try:
-            import streamlit as st
-            api_key = st.secrets.get("GROQ_API_KEY")
+            from streamlit.runtime.scriptrunner import get_script_run_ctx
+            if get_script_run_ctx() is not None:
+                import streamlit as st
+                session_key = st.session_state.get("groq_api_key")
+                if session_key and session_key.strip() and session_key.strip() not in DUMMY_API_KEYS:
+                    return session_key.strip()
+                secret_key = st.secrets.get("GROQ_API_KEY", "").strip()
+                if secret_key and secret_key not in DUMMY_API_KEYS:
+                    return secret_key
         except Exception:
             pass
-    if not api_key:
-        raise RuntimeError("GROQ_API_KEY is not set. Add it to .env (see .env.example).")
-    return Groq(api_key=api_key)
+
+    load_dotenv()
+    env_key = os.environ.get("GROQ_API_KEY", "").strip()
+    if env_key and env_key not in DUMMY_API_KEYS:
+        return env_key
+
+    return None
+
+
+def validate_groq_api_key(api_key: str) -> tuple[bool, str]:
+    """Test if a Groq API key is valid by querying the Groq API."""
+    key = api_key.strip() if api_key else ""
+    if not key or key in DUMMY_API_KEYS:
+        return False, "API key is empty or a placeholder."
+    try:
+        client = Groq(api_key=key, timeout=10.0)
+        client.models.list()
+        return True, "API key is valid."
+    except Exception as exc:
+        msg = str(exc)
+        if "401" in msg or "invalid_api_key" in msg.lower() or "authentication" in msg.lower():
+            return False, "Invalid Groq API key (Authentication failed). Check console.groq.com/keys."
+        return False, f"Groq error: {msg}"
+
+
+def _get_groq_client(api_key: str | None = None) -> Groq:
+    """Initialize and return a Groq client with resolved API key."""
+    resolved_key = resolve_groq_api_key(api_key)
+    if not resolved_key:
+        error_msg = (
+            "GROQ_API_KEY is not set or is invalid.\n"
+            "Options:\n"
+            "1. Local: Add GROQ_API_KEY to .env file\n"
+            "2. Streamlit UI: Enter GROQ_API_KEY in the sidebar settings\n"
+            "3. Streamlit Cloud: Add GROQ_API_KEY in Secrets tab\n"
+            "4. Environment: Set GROQ_API_KEY environment variable\n"
+            "Get a free key at: https://console.groq.com/keys"
+        )
+        raise RuntimeError(error_msg)
+
+    return Groq(api_key=resolved_key, timeout=15.0)
 
 
 # ---------------------------------------------------------------------------
@@ -158,16 +211,66 @@ def build_rag_prompt(question: str, retrieved: list[RetrievedNote]) -> tuple[str
 
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Fallback Extractive Synthesis
+# ---------------------------------------------------------------------------
+
+def _generate_extractive_fallback(
+    question: str,
+    retrieved: list[RetrievedNote],
+    reason: str = "",
+) -> str:
+    """Generate an informative, synthesized answer from retrieved notes when Groq LLM is unavailable."""
+    lines = []
+    if reason:
+        lines.append(f"> ⚠️ **Groq AI Notice**: LLM synthesis unavailable ({reason}).")
+        lines.append("> Retrieved relevant knowledge directly from your second brain:")
+        lines.append("")
+
+    lines.append(f"**Found {len(retrieved)} relevant note(s) for:** *\"{question}\"*")
+    lines.append("")
+
+    for i, note in enumerate(retrieved, 1):
+        clean_title = note.slug.replace("-", " ").title()
+        lines.append(f"### {i}. {clean_title} `[{note.para}]`")
+        if note.summary and note.summary.strip():
+            lines.append(f"**Summary:** {note.summary.strip()}\n")
+
+        # Extract useful content excerpt
+        body_snippet = note.body.strip()
+        body_lines = [
+            line.strip()
+            for line in body_snippet.splitlines()
+            if line.strip() and not line.startswith("---") and not line.startswith("#") and not line.startswith("created:") and not line.startswith("para:")
+        ]
+        excerpt = " ".join(body_lines)
+        if len(excerpt) > 280:
+            excerpt = excerpt[:277] + "..."
+        if excerpt and excerpt != note.summary.strip():
+            lines.append(f"> *Excerpt:* {excerpt}\n")
+
+    lines.append("---")
+    lines.append("💡 *Tip: To enable conversational AI answers, configure a valid Groq API key in the sidebar API Settings or `.env` file ([console.groq.com/keys](https://console.groq.com/keys)).*")
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
 # Synthesis
 # ---------------------------------------------------------------------------
 
-def synthesize_answer(system_prompt: str, user_prompt: str) -> str:
+def synthesize_answer(
+    system_prompt: str,
+    user_prompt: str,
+    api_key: str | None = None,
+    model: str | None = None,
+) -> str:
     """Call Groq LLM to synthesize an answer from the RAG prompt."""
-    client = _get_groq_client()
+    target_model = model or os.environ.get("LLM_MODEL") or LLM_MODEL
+    client = _get_groq_client(api_key=api_key)
     for attempt in range(3):
         try:
             response = client.chat.completions.create(
-                model=LLM_MODEL,
+                model=target_model,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
@@ -177,6 +280,12 @@ def synthesize_answer(system_prompt: str, user_prompt: str) -> str:
             return (response.choices[0].message.content or "").strip()
         except Exception as exc:
             status = getattr(exc, "status_code", None)
+            err_str = str(exc)
+            # Fail fast on auth error or missing model
+            if status == 401 or "invalid_api_key" in err_str.lower() or "authentication" in err_str.lower():
+                raise RuntimeError("Invalid Groq API key. Please check your GROQ_API_KEY in the sidebar or .env file.") from exc
+            if status == 404 or "model_not_found" in err_str.lower():
+                raise RuntimeError(f"Groq model '{target_model}' not found.") from exc
             if status == 429 and attempt < 2:
                 time.sleep(2**attempt)
                 continue
@@ -192,6 +301,8 @@ def ask(
     question: str,
     top_k: int = RAG_TOP_K,
     index: dict[str, WikiNoteEntry] | None = None,
+    api_key: str | None = None,
+    model: str | None = None,
 ) -> AskResult:
     """Full RAG pipeline: retrieve → build prompt → synthesize answer."""
     question = question.strip()
@@ -215,36 +326,53 @@ def ask(
     if not retrieved:
         return AskResult(answer=NO_ANSWER_MSG, sources=[])
 
-    system_prompt, user_prompt = build_rag_prompt(question, retrieved)
-    answer = synthesize_answer(system_prompt, user_prompt)
-
-    return AskResult(answer=answer, sources=retrieved)
+    try:
+        system_prompt, user_prompt = build_rag_prompt(question, retrieved)
+        answer = synthesize_answer(system_prompt, user_prompt, api_key=api_key, model=model)
+        return AskResult(answer=answer, sources=retrieved)
+    except Exception as exc:
+        err_msg = str(exc)
+        if "Invalid Groq API key" in err_msg or "GROQ_API_KEY is not set" in err_msg or "Authentication" in err_msg:
+            reason = "Invalid or unconfigured Groq API Key"
+        else:
+            reason = f"Groq API error ({err_msg[:60]})"
+        fallback_answer = _generate_extractive_fallback(question, retrieved, reason=reason)
+        return AskResult(answer=fallback_answer, sources=retrieved)
 
 
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
+def _safe_print(text: str = "") -> None:
+    """Safely print text handling Windows console encoding fallbacks."""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        safe_text = text.encode(sys.stdout.encoding or "ascii", errors="replace").decode(sys.stdout.encoding or "ascii")
+        print(safe_text)
+
+
 def _print_result(result: AskResult, *, show_scores: bool = False) -> None:
     """Pretty-print an AskResult to stdout."""
-    print()
-    print("=" * 60)
-    print("  Answer")
-    print("=" * 60)
-    print(result.answer)
+    _safe_print()
+    _safe_print("=" * 60)
+    _safe_print("  Answer")
+    _safe_print("=" * 60)
+    _safe_print(result.answer)
 
     if result.sources:
-        print()
-        print("-" * 60)
-        print("  Sources")
-        print("-" * 60)
+        _safe_print()
+        _safe_print("-" * 60)
+        _safe_print("  Sources")
+        _safe_print("-" * 60)
         for i, src in enumerate(result.sources, 1):
             score_str = f"  (score: {src.score:.3f})" if show_scores else ""
-            print(f"  {i}. {src.slug} [{src.para}]{score_str}")
-            print(f"     {src.path}")
+            _safe_print(f"  {i}. {src.slug} [{src.para}]{score_str}")
+            _safe_print(f"     {src.path}")
 
-    print("=" * 60)
-    print()
+    _safe_print("=" * 60)
+    _safe_print()
 
 
 def parse_args() -> argparse.Namespace:
@@ -271,6 +399,13 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    if sys.platform == "win32":
+        try:
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+            sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
     args = parse_args()
 
     if not args.question:
