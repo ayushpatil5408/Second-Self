@@ -5,11 +5,11 @@ id: b90d4b51
 links: []
 para: Resources
 raw_ref: raw/20260730_063439_b90d4b51.txt
-summary: LinkedIn profile URL
+summary: LinkedIn profile of Ayush Patil.
 tags:
 - linkedin
 - profile
-- contact
+- ayush-patil
 ---
 
 URL: https://www.linkedin.com/in/ayush-patil-36ba05411/       This is my LinkedIn profile URL

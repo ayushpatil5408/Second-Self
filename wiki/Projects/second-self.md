@@ -5,13 +5,14 @@ id: 6f874ddc
 links: []
 para: Projects
 raw_ref: raw/20260728_162650_6f874ddc.md
-summary: Personal AI second brain for capturing and organizing knowledge
+summary: 'SecondSelf: personal AI second brain for capturing, classifying, graphing
+  knowledge.'
 tags:
-- secondself
 - ai
 - secondbrain
-- knowledgeorganization
-- graphdatabase
+- knowledge
+- graph
+- personal
 ---
 
 # SecondSelf

@@ -6,13 +6,13 @@ links:
 - f4c8db29
 para: Resources
 raw_ref: raw/20260730_063659_c0e41db7.txt
-summary: Key skills for a developer
+summary: 'Top skills: Python, OOP, Cybersecurity, SQL, Problem Solving'
 tags:
+- skills
 - python
-- object-oriented-programming
 - cybersecurity
 - sql
-- problem-solving
+- oop
 ---
 
 Top skills
@@ -21,4 +21,4 @@ Python (Programming Language) • Object-Oriented Programming (OOP) • Cybersec
 
 ## Related Notes
 
-[[top-skills-for-developers-f4c8db29]]
+[[top-skills]]

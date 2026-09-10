@@ -1,48 +1,19 @@
 {
   "nodes": [
     {
-      "id": "33500dbe",
-      "label": "Duplicate Test Note For Append Only Verification",
+      "id": "1de41b62",
+      "label": "Auto Link Wiki Using Sentence Transformers",
       "para": "Projects",
       "tags": [
-        "duplicate",
-        "test",
-        "append-only",
-        "verification"
+        "nlp",
+        "embedding",
+        "auto-linking",
+        "sentence-transformers",
+        "wiki"
       ],
-      "summary": "Duplicate test note for append-only verification",
-      "content_preview": "Duplicate test note for append-only verification",
-      "path": "wiki/Projects/duplicate-test-note-for-append-only-verification.md"
-    },
-    {
-      "id": "245a47ac",
-      "label": "Para Method For Secondself",
-      "para": "Projects",
-      "tags": [
-        "para",
-        "method",
-        "secondself",
-        "productivity",
-        "organization"
-      ],
-      "summary": "Introduction to the PARA method for organizing work and projects",
-      "content_preview": "Journal: PARA method feels right for SecondSelf - Projects for active builds, Areas for ongoing responsibilities, Resources for saved articles, Archives for done work. ## Related Notes [[para-metho...",
-      "path": "wiki/Projects/para-method-for-secondself.md"
-    },
-    {
-      "id": "01e209cb",
-      "label": "Para Method Simple System For Organizing Digital Life",
-      "para": "Projects",
-      "tags": [
-        "para",
-        "organization",
-        "productivity",
-        "digital-life",
-        "system"
-      ],
-      "summary": "Simple system for organizing digital life",
-      "content_preview": "URL: https://fortelabs.com/blog/para/ TITLE: The PARA Method: The Simple System for Organizing Your Digital Life in Seconds https://fortelabs.com/blog/para/ ## Related Notes [[para-method-for-secon...",
-      "path": "wiki/Projects/para-method-simple-system-for-organizing-digital-life.md"
+      "summary": "Idea to auto-link wiki notes using sentence-transformers embeddings at 0.75 similarity.",
+      "content_preview": "Idea: use sentence-transformers all-MiniLM-L6-v2 for embedding-based auto-linking between wiki notes at 0.75 cosine similarity threshold.",
+      "path": "wiki/Projects/auto-link-wiki-using-sentence-transformers.md"
     },
     {
       "id": "070f0d2d",
@@ -50,13 +21,12 @@
       "para": "Projects",
       "tags": [
         "pipeline",
-        "classification",
-        "linking",
-        "raw-items",
-        "stdin"
+        "phase2",
+        "task",
+        "reminder"
       ],
       "summary": "Run pipeline.py after Phase 2 to classify and link new raw items.",
-      "content_preview": "Quick stdin capture: remember to run pipeline.py after Phase 2 to classify and link new raw items. ## Related Notes [[wire-groq-api-key-in-env-for-phase-2-pipeline]] [[groq-quickstart-documentation]]",
+      "content_preview": "Quick stdin capture: remember to run pipeline.py after Phase 2 to classify and link new raw items. ## Related Notes [[wire-groq-api-key-in-env-before-starting-phase-2-classification-pipeline]] [[qu...",
       "path": "wiki/Projects/run-pipeline-after-phase-2.md"
     },
     {
@@ -64,107 +34,133 @@
       "label": "Second Self",
       "para": "Projects",
       "tags": [
-        "secondself",
         "ai",
         "secondbrain",
-        "knowledgeorganization",
-        "graphdatabase"
+        "knowledge",
+        "graph",
+        "personal"
       ],
-      "summary": "Personal AI second brain for capturing and organizing knowledge",
+      "summary": "SecondSelf: personal AI second brain for capturing, classifying, graphing knowledge.",
       "content_preview": "# SecondSelf Your personal AI second brain — capture anything, let AI organize it, explore it as a graph, and ask questions over your own knowledge. ## Status | Phase | Name | Status | |-------|---...",
       "path": "wiki/Projects/second-self.md"
     },
     {
-      "id": "d0add7f5",
-      "label": "Secondself Phase 1 Goal",
+      "id": "e9589455",
+      "label": "Secondself Config",
       "para": "Projects",
       "tags": [
-        "self",
-        "capture",
-        "notes",
-        "links",
-        "files"
+        "config",
+        "python",
+        "project-setup",
+        "secondself",
+        "directories"
       ],
-      "summary": "SecondSelf Phase 1 goal: capture notes, links, and files into raw/ with timestamp and unique ID.",
-      "content_preview": "SecondSelf Phase 1 goal: one command to capture notes, links, and files into raw/ with timestamp and unique ID. ## Related Notes [[para-method-simple-system-for-organizing-digital-life]] [[para-met...",
-      "path": "wiki/Projects/secondself-phase-1-goal.md"
+      "summary": "Configuration module for SecondSelf project, setting paths, thresholds, and ensuring directories.",
+      "content_preview": "\"\"\"Shared configuration for SecondSelf.\"\"\" from __future__ import annotations import sys from pathlib import Path MIN_PYTHON_VERSION = (3, 10) PROJECT_ROOT = Path(__file__).resolve().parent RAW_DIR...",
+      "path": "wiki/Projects/secondself-config.md"
     },
     {
-      "id": "1de41b62",
-      "label": "Sentence Transformers Auto Linking Between Wiki Notes",
+      "id": "d0add7f5",
+      "label": "Secondself Phase 1 Goal Capture Command",
       "para": "Projects",
       "tags": [
-        "sentence-transformers",
-        "all-mini-lm-l6-v2",
-        "auto-linking",
-        "wiki-notes",
-        "embedding"
+        "secondself",
+        "phase1",
+        "capture",
+        "automation"
       ],
-      "summary": "Use sentence-transformers for auto-linking between wiki notes",
-      "content_preview": "Idea: use sentence-transformers all-MiniLM-L6-v2 for embedding-based auto-linking between wiki notes at 0.75 cosine similarity threshold.",
-      "path": "wiki/Projects/sentence-transformers-auto-linking-between-wiki-notes.md"
+      "summary": "Goal to create a command that captures notes, links, and files into raw/ with timestamp and unique ID.",
+      "content_preview": "SecondSelf Phase 1 goal: one command to capture notes, links, and files into raw/ with timestamp and unique ID. ## Related Notes [[test-end-to-end-capture-secondself]] [[journal-entry-reflecting-on...",
+      "path": "wiki/Projects/secondself-phase-1-goal-capture-command.md"
+    },
+    {
+      "id": "d3e8014a",
+      "label": "Test End To End Capture Secondself",
+      "para": "Projects",
+      "tags": [
+        "testing",
+        "capture",
+        "secondself",
+        "end-to-end"
+      ],
+      "summary": "Test end-to-end capture for SecondSelf",
+      "content_preview": "Testing end-to-end capture functionality for SecondSelf ## Related Notes [[secondself-phase-1-goal-capture-command]] [[journal-entry-reflecting-on-para-method-for-organizing-secondself]] [[the-para...",
+      "path": "wiki/Projects/test-end-to-end-capture-secondself.md"
     },
     {
       "id": "1c68db24",
-      "label": "Week 3 Milestone Graph Export",
+      "label": "Week 3 Milestone Build Graph Exports Graph Json Vis Network Visualization",
       "para": "Projects",
       "tags": [
-        "milestone",
-        "build-graphpy",
-        "graphjson",
+        "graph",
         "visualization",
-        "week3"
+        "python",
+        "milestone",
+        "vis-network"
       ],
-      "summary": "Week 3 milestone: export graph for visualization",
+      "summary": "Week 3 milestone: build_graph.py exports graph.json for vis-network visualization.",
       "content_preview": "Week 3 milestone: build_graph.py exports graph.json for vis-network visualization.",
-      "path": "wiki/Projects/week-3-milestone-graph-export.md"
+      "path": "wiki/Projects/week-3-milestone-build-graph-exports-graph-json-vis-network-visualization.md"
     },
     {
       "id": "a83ab779",
-      "label": "Wire Groq Api Key In Env For Phase 2 Pipeline",
+      "label": "Wire Groq Api Key In Env Before Starting Phase 2 Classification Pipeline",
       "para": "Projects",
       "tags": [
-        "classification",
-        "pipeline",
+        "todo",
         "groq",
         "api",
-        "env"
+        "pipeline"
       ],
-      "summary": "Wire Groq API key in .env for Phase 2 pipeline",
-      "content_preview": "Todo: wire Groq API key in .env before starting Phase 2 classification pipeline. ## Related Notes [[run-pipeline-after-phase-2]] [[groq-quickstart-documentation]]",
-      "path": "wiki/Projects/wire-groq-api-key-in-env-for-phase-2-pipeline.md"
+      "summary": "Wire Groq API key in .env before starting Phase 2 classification pipeline.",
+      "content_preview": "Todo: wire Groq API key in .env before starting Phase 2 classification pipeline. ## Related Notes [[run-pipeline-after-phase-2]] [[quickstart-groqdocs]]",
+      "path": "wiki/Projects/wire-groq-api-key-in-env-before-starting-phase-2-classification-pipeline.md"
     },
     {
-      "id": "8b3cbead",
-      "label": "Groq Quickstart Documentation",
+      "id": "33500dbe",
+      "label": "Duplicate Test Note Append Only Verification",
       "para": "Resources",
       "tags": [
-        "groq",
-        "docs",
-        "quickstart",
-        "tutorial",
-        "api"
+        "test",
+        "duplicate",
+        "verification",
+        "append-only"
       ],
-      "summary": "Groq quickstart documentation",
-      "content_preview": "URL: https://console.groq.com/docs/quickstart TITLE: Quickstart - GroqDocs https://console.groq.com/docs/quickstart ## Related Notes [[wire-groq-api-key-in-env-for-phase-2-pipeline]] [[run-pipeline...",
-      "path": "wiki/Resources/groq-quickstart-documentation.md"
+      "summary": "Duplicate test note for append-only verification.",
+      "content_preview": "Duplicate test note for append-only verification",
+      "path": "wiki/Resources/duplicate-test-note-append-only-verification.md"
+    },
+    {
+      "id": "245a47ac",
+      "label": "Journal Entry Reflecting On Para Method For Organizing Secondself",
+      "para": "Resources",
+      "tags": [
+        "para",
+        "method",
+        "organization",
+        "journal",
+        "secondself"
+      ],
+      "summary": "Journal entry reflecting on PARA method for organizing SecondSelf projects, areas, resources, archives.",
+      "content_preview": "Journal: PARA method feels right for SecondSelf - Projects for active builds, Areas for ongoing responsibilities, Resources for saved articles, Archives for done work. ## Related Notes [[the-para-m...",
+      "path": "wiki/Resources/journal-entry-reflecting-on-para-method-for-organizing-secondself.md"
     },
     {
       "id": "b90d4b51",
-      "label": "Linkedin Profile Url",
+      "label": "Linkedin Profile Ayush Patil",
       "para": "Resources",
       "tags": [
         "linkedin",
         "profile",
-        "contact"
+        "ayush-patil"
       ],
-      "summary": "LinkedIn profile URL",
+      "summary": "LinkedIn profile of Ayush Patil.",
       "content_preview": "URL: https://www.linkedin.com/in/ayush-patil-36ba05411/ This is my LinkedIn profile URL https://www.linkedin.com/in/ayush-patil-36ba05411/ This is my LinkedIn profile URL",
-      "path": "wiki/Resources/linkedin-profile-url.md"
+      "path": "wiki/Resources/linkedin-profile-ayush-patil.md"
     },
     {
       "id": "cc7134e7",
-      "label": "Machine Learning Subset Of Ai Cc7134E7",
+      "label": "Machine Learning Overview Cc7134E7",
       "para": "Resources",
       "tags": [
         "machine-learning",
@@ -173,13 +169,13 @@
         "unsupervised-learning",
         "reinforcement-learning"
       ],
-      "summary": "Subset of AI focusing on data-driven system building",
+      "summary": "Overview of machine learning, covering supervised, unsupervised, and reinforcement learning.",
       "content_preview": "Machine learning is a subset of AI that focuses on building systems that learn from data. Key concepts include supervised learning, unsupervised learning, and reinforcement learning. ## Related Not...",
-      "path": "wiki/Resources/machine-learning-subset-of-ai-cc7134e7.md"
+      "path": "wiki/Resources/machine-learning-overview-cc7134e7.md"
     },
     {
       "id": "4eba605f",
-      "label": "Machine Learning Subset Of Ai",
+      "label": "Machine Learning Overview",
       "para": "Resources",
       "tags": [
         "machine-learning",
@@ -188,158 +184,238 @@
         "unsupervised-learning",
         "reinforcement-learning"
       ],
-      "summary": "Subset of AI that learns from data",
+      "summary": "Overview of machine learning concepts: supervised, unsupervised, reinforcement.",
       "content_preview": "Machine learning is a subset of AI that focuses on building systems that learn from data. Key concepts include supervised learning, unsupervised learning, and reinforcement learning. ## Related Not...",
-      "path": "wiki/Resources/machine-learning-subset-of-ai.md"
+      "path": "wiki/Resources/machine-learning-overview.md"
     },
     {
       "id": "83dd5bf1",
-      "label": "Pretrained Models For Sentence Transformers",
+      "label": "Pretrained Models Sentence Transformers Doc",
       "para": "Resources",
       "tags": [
-        "pretrained",
-        "models",
-        "sentence",
-        "transformers",
-        "sbert"
+        "sentence-transformers",
+        "pretrained-models",
+        "nlp",
+        "documentation",
+        "transformers"
       ],
-      "summary": "Pretrained models for sentence transformers",
+      "summary": "Documentation page on pretrained models for Sentence Transformers.",
       "content_preview": "URL: https://www.sbert.net/docs/pretrained_models.html TITLE: Pretrained Models &mdash; Sentence Transformers documentation https://www.sbert.net/docs/pretrained_models.html",
-      "path": "wiki/Resources/pretrained-models-for-sentence-transformers.md"
+      "path": "wiki/Resources/pretrained-models-sentence-transformers-doc.md"
     },
     {
       "id": "f46ebb7e",
-      "label": "Python Pathlib Filesystem Paths",
+      "label": "Python Pathlib Documentation",
       "para": "Resources",
       "tags": [
         "python",
         "pathlib",
         "filesystem",
-        "paths"
+        "documentation"
       ],
-      "summary": "Python 3.14.6 documentation for pathlib",
+      "summary": "Python pathlib documentation page",
       "content_preview": "URL: https://docs.python.org/3/library/pathlib.html TITLE: pathlib â Object-oriented filesystem paths &#8212; Python 3.14.6 documentation https://docs.python.org/3/library/pathlib.html",
-      "path": "wiki/Resources/python-pathlib-filesystem-paths.md"
+      "path": "wiki/Resources/python-pathlib-documentation.md"
     },
     {
-      "id": "e9589455",
-      "label": "Secondself Shared Configuration",
+      "id": "8b3cbead",
+      "label": "Quickstart Groqdocs",
       "para": "Resources",
       "tags": [
-        "python",
-        "configuration",
-        "secondself"
+        "groq",
+        "docs",
+        "quickstart",
+        "api",
+        "ai"
       ],
-      "summary": "Shared configuration for SecondSelf project",
-      "content_preview": "\"\"\"Shared configuration for SecondSelf.\"\"\" from __future__ import annotations import sys from pathlib import Path MIN_PYTHON_VERSION = (3, 10) PROJECT_ROOT = Path(__file__).resolve().parent RAW_DIR...",
-      "path": "wiki/Resources/secondself-shared-configuration.md"
+      "summary": "Quickstart guide for GroqDocs API.",
+      "content_preview": "URL: https://console.groq.com/docs/quickstart TITLE: Quickstart - GroqDocs https://console.groq.com/docs/quickstart ## Related Notes [[wire-groq-api-key-in-env-before-starting-phase-2-classificatio...",
+      "path": "wiki/Resources/quickstart-groqdocs.md"
+    },
+    {
+      "id": "01e209cb",
+      "label": "The Para Method Simple System For Organizing Your Digital Life In Seconds",
+      "para": "Resources",
+      "tags": [
+        "para",
+        "organization",
+        "digital",
+        "method",
+        "productivity"
+      ],
+      "summary": "A blog post explaining the PARA method for organizing digital life.",
+      "content_preview": "URL: https://fortelabs.com/blog/para/ TITLE: The PARA Method: The Simple System for Organizing Your Digital Life in Seconds https://fortelabs.com/blog/para/ ## Related Notes [[journal-entry-reflect...",
+      "path": "wiki/Resources/the-para-method-simple-system-for-organizing-your-digital-life-in-seconds.md"
     },
     {
       "id": "c0e41db7",
-      "label": "Top Skills For Developers",
+      "label": "Top Skills Python Oop Cybersecurity Sql Problem Solving",
       "para": "Resources",
       "tags": [
+        "skills",
         "python",
-        "object-oriented-programming",
         "cybersecurity",
         "sql",
-        "problem-solving"
+        "oop"
       ],
-      "summary": "Key skills for a developer",
-      "content_preview": "Top skills Python (Programming Language) • Object-Oriented Programming (OOP) • Cybersecurity • SQL • Problem Solving As per uploaded in LinkedIn profile ## Related Notes [[top-skills-for-developers...",
-      "path": "wiki/Resources/top-skills-for-developers.md"
+      "summary": "Top skills: Python, OOP, Cybersecurity, SQL, Problem Solving",
+      "content_preview": "Top skills Python (Programming Language) • Object-Oriented Programming (OOP) • Cybersecurity • SQL • Problem Solving As per uploaded in LinkedIn profile ## Related Notes [[top-skills]]",
+      "path": "wiki/Resources/top-skills-python-oop-cybersecurity-sql-problem-solving.md"
+    },
+    {
+      "id": "f4c8db29",
+      "label": "Top Skills",
+      "para": "Resources",
+      "tags": [
+        "skills",
+        "python",
+        "cybersecurity",
+        "sql",
+        "oop"
+      ],
+      "summary": "List of top skills from LinkedIn profile.",
+      "content_preview": "Top skills Python (Programming Language) • Object-Oriented Programming (OOP) • Cybersecurity • SQL • Problem Solving As per uploaded in LinkedIn profile ## Related Notes [[top-skills-python-oop-cyb...",
+      "path": "wiki/Resources/top-skills.md"
     }
   ],
   "edges": [
     {
-      "source": "245a47ac",
-      "target": "01e209cb",
-      "weight": 0.7022,
-      "type": "semantic_similarity"
-    },
-    {
-      "source": "245a47ac",
-      "target": "d0add7f5",
-      "weight": 0.5551,
-      "type": "semantic_similarity"
-    },
-    {
-      "source": "01e209cb",
-      "target": "245a47ac",
-      "weight": 0.7022,
-      "type": "semantic_similarity"
-    },
-    {
-      "source": "01e209cb",
-      "target": "d0add7f5",
-      "weight": 0.5853,
+      "source": "070f0d2d",
+      "target": "a83ab779",
+      "weight": 0.8465,
       "type": "semantic_similarity"
     },
     {
       "source": "070f0d2d",
       "target": "8b3cbead",
-      "weight": 0.7508,
-      "type": "semantic_similarity"
-    },
-    {
-      "source": "070f0d2d",
-      "target": "a83ab779",
-      "weight": 0.8428,
+      "weight": 0.7373,
       "type": "semantic_similarity"
     },
     {
       "source": "d0add7f5",
       "target": "01e209cb",
-      "weight": 0.5853,
+      "weight": 0.6166,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "d0add7f5",
+      "target": "d3e8014a",
+      "weight": 0.6634,
       "type": "semantic_similarity"
     },
     {
       "source": "d0add7f5",
       "target": "245a47ac",
-      "weight": 0.5551,
+      "weight": 0.6521,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "d3e8014a",
+      "target": "01e209cb",
+      "weight": 0.6578,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "d3e8014a",
+      "target": "d0add7f5",
+      "weight": 0.6634,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "d3e8014a",
+      "target": "245a47ac",
+      "weight": 0.7322,
       "type": "semantic_similarity"
     },
     {
       "source": "a83ab779",
       "target": "070f0d2d",
-      "weight": 0.8428,
+      "weight": 0.8465,
       "type": "semantic_similarity"
     },
     {
       "source": "a83ab779",
       "target": "8b3cbead",
-      "weight": 0.8567,
+      "weight": 0.8897,
       "type": "semantic_similarity"
     },
     {
-      "source": "8b3cbead",
-      "target": "070f0d2d",
-      "weight": 0.7508,
+      "source": "245a47ac",
+      "target": "01e209cb",
+      "weight": 0.7551,
       "type": "semantic_similarity"
     },
     {
-      "source": "8b3cbead",
-      "target": "a83ab779",
-      "weight": 0.8567,
+      "source": "245a47ac",
+      "target": "d0add7f5",
+      "weight": 0.6521,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "245a47ac",
+      "target": "d3e8014a",
+      "weight": 0.7322,
       "type": "semantic_similarity"
     },
     {
       "source": "cc7134e7",
       "target": "4eba605f",
-      "weight": 0.9975,
+      "weight": 0.9988,
       "type": "semantic_similarity"
     },
     {
       "source": "4eba605f",
       "target": "cc7134e7",
-      "weight": 0.9975,
+      "weight": 0.9988,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "8b3cbead",
+      "target": "a83ab779",
+      "weight": 0.8897,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "8b3cbead",
+      "target": "070f0d2d",
+      "weight": 0.7373,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "01e209cb",
+      "target": "d0add7f5",
+      "weight": 0.6166,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "01e209cb",
+      "target": "d3e8014a",
+      "weight": 0.6578,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "01e209cb",
+      "target": "245a47ac",
+      "weight": 0.7551,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "c0e41db7",
+      "target": "f4c8db29",
+      "weight": 0.9876,
+      "type": "semantic_similarity"
+    },
+    {
+      "source": "f4c8db29",
+      "target": "c0e41db7",
+      "weight": 0.9876,
       "type": "semantic_similarity"
     }
   ],
   "meta": {
-    "node_count": 17,
-    "edge_count": 14,
-    "generated_at": "2026-08-14T19:04:30.987944+00:00",
+    "node_count": 19,
+    "edge_count": 22,
+    "generated_at": "2026-09-10T17:22:54.133469+00:00",
     "source": "SecondSelf build_graph.py"
   }
 }

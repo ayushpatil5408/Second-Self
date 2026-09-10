@@ -3,13 +3,16 @@ created: '2026-07-28T16:26:50.642942'
 embedding_model: all-MiniLM-L6-v2
 id: e9589455
 links: []
-para: Resources
+para: Projects
 raw_ref: raw/20260728_162650_e9589455.py
-summary: Shared configuration for SecondSelf project
+summary: Configuration module for SecondSelf project, setting paths, thresholds, and
+  ensuring directories.
 tags:
+- config
 - python
-- configuration
+- project-setup
 - secondself
+- directories
 ---
 
 """Shared configuration for SecondSelf."""
