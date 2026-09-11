@@ -106,7 +106,8 @@ python ask.py --scores "What are my notes on machine learning?"
 ### 5. Launch the Web Application (Phase 4)
 Start the Streamlit web app to view the interactive graph, stats, and search interface:
 ```bash
-streamlit run app.py
+# Second Self
+[View Live Website](https://second-self-monster.streamlit.app/)
 ```
 
 ## Documentation
