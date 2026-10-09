@@ -7,13 +7,18 @@ import shutil
 import sys
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, datetime
+try:
+    from datetime import UTC, datetime
+except ImportError:
+    from datetime import datetime, timezone
+    UTC = timezone.utc
 from pathlib import Path
 from typing import Any
 
 import requests
 
 from config import RAW_DIR
+from media_extractor import get_media_category, get_mime_type
 
 
 @dataclass
@@ -115,21 +120,57 @@ def capture_link(url: str, source: str = "cli") -> CaptureRecord:
     return save_capture(content, "link", source, ext="txt", extra=extra)
 
 
-def capture_file(path: str, source: str = "cli") -> CaptureRecord:
-    source_path = Path(path).expanduser().resolve()
-    if not source_path.is_file():
-        raise FileNotFoundError(f"Source file not found: {source_path}")
+def capture_media(
+    data_or_path: bytes | Path | str,
+    original_filename: str = "",
+    source: str = "cli",
+    caption: str = "",
+) -> CaptureRecord:
+    """Capture a file or media stream (image, audio, document, video) into raw/."""
     timestamp = datetime.now(UTC).replace(tzinfo=None)
     capture_id = generate_id()
-    ext = source_path.suffix.lstrip(".") or "bin"
-    filename = make_filename(timestamp, capture_id, ext)
-    destination = RAW_DIR / filename
-    shutil.copy2(source_path, destination)
-    extra = {
-        "original_path": str(source_path),
-        "original_name": source_path.name,
+
+    if isinstance(data_or_path, (str, Path)):
+        source_path = Path(data_or_path).expanduser().resolve()
+        if not source_path.is_file():
+            raise FileNotFoundError(f"Source file not found: {source_path}")
+        original_name = original_filename or source_path.name
+        ext = source_path.suffix.lstrip(".") or "bin"
+        filename = make_filename(timestamp, capture_id, ext)
+        destination = RAW_DIR / filename
+        shutil.copy2(source_path, destination)
+        file_size = destination.stat().st_size
+    else:
+        # Raw bytes from upload
+        original_name = original_filename or f"upload_{capture_id}.bin"
+        ext = Path(original_name).suffix.lstrip(".") or "bin"
+        filename = make_filename(timestamp, capture_id, ext)
+        destination = RAW_DIR / filename
+        destination.write_bytes(data_or_path)
+        file_size = len(data_or_path)
+
+    category = get_media_category(original_name)
+    mime_type = get_mime_type(original_name)
+
+    extra: dict[str, Any] = {
+        "original_name": original_name,
+        "media_category": category,
+        "mime_type": mime_type,
+        "file_size": file_size,
     }
-    return _make_record(capture_id, timestamp, "file", source, filename, extra)
+    if caption:
+        extra["caption"] = caption
+        extra["preview"] = f"{caption} ({original_name})"
+    else:
+        extra["preview"] = f"Captured {category}: {original_name}"
+
+    capture_type = "media" if category in {"image", "audio", "video"} else "file"
+    return _make_record(capture_id, timestamp, capture_type, source, filename, extra)
+
+
+def capture_file(path: str, source: str = "cli", caption: str = "") -> CaptureRecord:
+    """Capture an existing file into raw/."""
+    return capture_media(path, source=source, caption=caption)
 
 
 def capture_stdin(source: str = "stdin") -> CaptureRecord:
@@ -140,27 +181,30 @@ def capture_stdin(source: str = "stdin") -> CaptureRecord:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Capture notes, links, and files into raw/.")
+    parser = argparse.ArgumentParser(description="Capture notes, links, and media/files into raw/.")
     parser.add_argument("text", nargs="*", help="Plain note text to capture.")
     parser.add_argument("--link", "-l", help="Capture a URL as a link.")
     parser.add_argument("--file", "-f", help="Capture an existing file into raw/.")
+    parser.add_argument("--media", "-m", help="Capture an image, audio, or media file into raw/.")
+    parser.add_argument("--caption", "-c", default="", help="Optional caption or note describing the file.")
     parser.add_argument("--stdin", action="store_true", help="Capture text from stdin.")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    target_file = args.media or args.file
     try:
-        if args.stdin or (not sys.stdin.isatty() and not any((args.link, args.file, args.text))):
+        if args.stdin or (not sys.stdin.isatty() and not any((args.link, target_file, args.text))):
             record = capture_stdin()
         elif args.link:
-            if args.text:
-                raise ValueError("Cannot capture note text and a link in the same command.")
+            if args.text or target_file:
+                raise ValueError("Cannot capture note/file and a link in the same command.")
             record = capture_link(args.link)
-        elif args.file:
+        elif target_file:
             if args.text:
                 raise ValueError("Cannot capture note text and a file in the same command.")
-            record = capture_file(args.file)
+            record = capture_media(target_file, caption=args.caption)
         elif args.text:
             text = " ".join(args.text).strip()
             if not text:

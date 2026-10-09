@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 from groq import Groq
 
 from config import EMBEDDING_MODEL, LLM_MODEL, PROJECT_ROOT, RAW_DIR, WIKI_DIR
+from media_extractor import extract_media, get_media_category, get_mime_type
 
 PARA_CATEGORIES = ("Projects", "Areas", "Resources", "Archives")
 TEXT_EXTENSIONS = {".txt", ".md", ".py", ".json", ".csv", ".html", ".xml", ".yaml", ".yml"}
@@ -199,43 +200,47 @@ def read_raw_content(raw_path: Path) -> tuple[str, str]:
     if raw_path.stat().st_size == 0:
         raise ValueError(f"Raw file is empty: {raw_path.name}")
 
-    ext = raw_path.suffix.lower()
-    if ext in TEXT_EXTENSIONS or ext == "":
-        try:
-            text = raw_path.read_text(encoding="utf-8")
-            body = text.rstrip() + "\n"
-            prompt_text = text[:MAX_CLASSIFY_CHARS]
-            if len(text) > MAX_CLASSIFY_CHARS:
-                prompt_text += "\n\n[truncated]"
-            return prompt_text, body
-        except UnicodeDecodeError:
-            pass
-
     metadata = _read_metadata(raw_path)
-    prompt_text = (
-        "Binary or non-text file capture.\n"
-        f"Filename: {raw_path.name}\n"
-        f"Extension: {ext or '(none)'}\n"
-        f"Metadata:\n{json.dumps(metadata, indent=2)}"
-    )
-    body = (
-        f"# {raw_path.name}\n\n"
-        f"Captured binary file ({ext or 'unknown type'}).\n\n"
-        f"Original filename: `{raw_path.name}`\n"
-    )
-    if metadata:
-        body += f"\n```json\n{json.dumps(metadata, indent=2)}\n```\n"
-    return prompt_text, body
+    capture_type = metadata.get("capture_type", "")
+    caption = metadata.get("extra", {}).get("caption", "")
+    ext = raw_path.suffix.lower()
+
+    # If it's a file/media capture or not a plain text extension, extract deeply
+    if capture_type in {"file", "media"} or ext not in TEXT_EXTENSIONS:
+        try:
+            from ask import resolve_groq_api_key
+            api_key = resolve_groq_api_key()
+        except Exception:
+            api_key = None
+
+        extracted = extract_media(raw_path, api_key=api_key, caption=caption)
+        return extracted.prompt_content, extracted.markdown_body
+
+    # For standard plain-text note/link captures
+    try:
+        text = raw_path.read_text(encoding="utf-8")
+        body = text.rstrip() + "\n"
+        prompt_text = text[:MAX_CLASSIFY_CHARS]
+        if len(text) > MAX_CLASSIFY_CHARS:
+            prompt_text += "\n\n[truncated]"
+        return prompt_text, body
+    except UnicodeDecodeError:
+        pass
+
+    extracted = extract_media(raw_path, caption=caption)
+    return extracted.prompt_content, extracted.markdown_body
 
 
 def _fallback_classification(raw_path: Path) -> ClassificationResult:
     capture_id = extract_capture_id(raw_path)
     slug = slug_from_filename(raw_path)
     metadata = _read_metadata(raw_path)
-    summary = metadata.get("extra", {}).get("preview", "").strip()
-    if not summary:
-        summary = f"Captured file: {raw_path.name}"
-    tags = ["unparsed-file"] if raw_path.suffix.lower() not in TEXT_EXTENSIONS else []
+    caption = metadata.get("extra", {}).get("caption", "")
+
+    extracted = extract_media(raw_path, caption=caption)
+    summary = extracted.summary or metadata.get("extra", {}).get("preview", "").strip() or f"Captured: {raw_path.name}"
+    tags = extracted.tags or (["unparsed-file"] if raw_path.suffix.lower() not in TEXT_EXTENSIONS else [])
+
     return ClassificationResult(
         para="Resources",
         tags=tags,
@@ -352,9 +357,10 @@ def write_wiki_note(raw_path: Path, classification: ClassificationResult, body: 
     capture_id = extract_capture_id(raw_path)
     raw_ref = normalize_raw_ref(f"raw/{raw_path.name}")
     created = extract_created(raw_path)
+    metadata = _read_metadata(raw_path)
 
     post = frontmatter.Post(body.rstrip() + "\n")
-    post.metadata = {
+    meta_dict: dict[str, Any] = {
         "id": capture_id,
         "raw_ref": raw_ref,
         "para": classification.para,
@@ -364,6 +370,17 @@ def write_wiki_note(raw_path: Path, classification: ClassificationResult, body: 
         "links": [],
         "embedding_model": EMBEDDING_MODEL,
     }
+
+    # Add media-specific frontmatter attributes if applicable
+    extra = metadata.get("extra", {})
+    category = extra.get("media_category") or get_media_category(raw_path)
+    if metadata.get("capture_type") in {"file", "media"} or category in {"image", "audio", "video", "document"}:
+        meta_dict["media_type"] = category
+        meta_dict["original_name"] = extra.get("original_name", raw_path.name)
+        meta_dict["file_size"] = extra.get("file_size", raw_path.stat().st_size)
+        meta_dict["mime_type"] = extra.get("mime_type", get_mime_type(raw_path))
+
+    post.metadata = meta_dict
 
     wiki_path = WIKI_DIR / classification.para / f"{classification.slug}.md"
     wiki_path.parent.mkdir(parents=True, exist_ok=True)

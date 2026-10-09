@@ -57,6 +57,9 @@ class RetrievedNote:
     body: str
     score: float
     path: str
+    media_type: str | None = None
+    original_name: str | None = None
+    raw_ref: str | None = None
 
 
 @dataclass
@@ -181,6 +184,9 @@ def retrieve(
             body=entry.body,
             score=float(score),
             path=str(entry.path.relative_to(PROJECT_ROOT)),
+            media_type=getattr(entry, "media_type", None),
+            original_name=getattr(entry, "original_name", None),
+            raw_ref=getattr(entry, "raw_ref", None),
         ))
 
     return results
@@ -192,7 +198,10 @@ def retrieve(
 
 def _format_note_for_prompt(note: RetrievedNote) -> str:
     """Format a single retrieved note for inclusion in the RAG prompt."""
-    header = f"{note.slug} [{note.para}]"
+    if note.media_type:
+        header = f"{note.slug} [{note.para}] (Media: {note.media_type}, File: {note.original_name or note.slug})"
+    else:
+        header = f"{note.slug} [{note.para}]"
     text = note.body.strip()
     if len(text) > MAX_RAG_CHARS:
         text = text[:MAX_RAG_CHARS] + "\n[truncated]"
@@ -232,7 +241,10 @@ def _generate_extractive_fallback(
 
     for i, note in enumerate(retrieved, 1):
         clean_title = note.slug.replace("-", " ").title()
-        lines.append(f"### {i}. {clean_title} `[{note.para}]`")
+        badge_str = f"`[{note.para}]`"
+        if note.media_type:
+            badge_str += f" `[📁 {note.media_type.upper()}: {note.original_name or note.slug}]`"
+        lines.append(f"### {i}. {clean_title} {badge_str}")
         if note.summary and note.summary.strip():
             lines.append(f"**Summary:** {note.summary.strip()}\n")
 

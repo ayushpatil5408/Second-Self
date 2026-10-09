@@ -224,11 +224,16 @@ def render_capture_section() -> None:
 
     capture_mode = st.radio(
         "Capture type",
-        ["Note", "Link"],
+        ["Note", "Link", "File / Media"],
         horizontal=True,
         key="capture_mode",
         label_visibility="collapsed",
     )
+
+    note_text = None
+    link_url = None
+    uploaded_file = None
+    media_caption = ""
 
     if capture_mode == "Note":
         note_text = st.text_area(
@@ -238,15 +243,38 @@ def render_capture_section() -> None:
             key="capture_note_text",
             label_visibility="collapsed",
         )
-        link_url = None
-    else:
-        note_text = None
+    elif capture_mode == "Link":
         link_url = st.text_input(
             "URL",
             placeholder="https://...",
             key="capture_link_url",
             label_visibility="collapsed",
         )
+    else:
+        uploaded_file = st.file_uploader(
+            "Choose a file or media",
+            type=None,
+            key="capture_media_file",
+            help="Images (PNG, JPG, WEBP), Audio (MP3, WAV, M4A), Documents (PDF, DOCX, CSV), Code, etc.",
+        )
+        media_caption = st.text_input(
+            "Caption / Note (optional)",
+            placeholder="e.g. Brainstorm diagram, Sprint voice memo, Invoice...",
+            key="capture_media_caption",
+        )
+
+        if uploaded_file is not None:
+            from media_extractor import get_media_category
+            cat = get_media_category(uploaded_file.name)
+            file_kb = uploaded_file.size / 1024
+            st.caption(f"📁 **{uploaded_file.name}** ({file_kb:.1f} KB) · `{cat}`")
+
+            if cat == "image":
+                st.image(uploaded_file, caption=uploaded_file.name, use_container_width=True)
+            elif cat == "audio":
+                st.audio(uploaded_file)
+            elif cat == "video":
+                st.video(uploaded_file)
 
     run_pipeline = st.checkbox("Run pipeline after capture", value=True, key="capture_run_pipeline")
 
@@ -259,18 +287,29 @@ def render_capture_section() -> None:
                     return
                 from capture import capture_note
                 record = capture_note(text, source="streamlit")
-            else:
+            elif capture_mode == "Link":
                 url = (link_url or "").strip()
                 if not url:
                     st.warning("Please enter a URL.")
                     return
                 from capture import capture_link
                 record = capture_link(url, source="streamlit")
+            else:
+                if uploaded_file is None:
+                    st.warning("Please select a file to upload.")
+                    return
+                from capture import capture_media
+                record = capture_media(
+                    uploaded_file.getvalue(),
+                    original_filename=uploaded_file.name,
+                    source="streamlit",
+                    caption=media_caption.strip(),
+                )
 
             st.success(f"Captured -> `{record.file_path.name}`")
 
             if run_pipeline:
-                with st.spinner("Running pipeline (classify + link + graph)..."):
+                with st.spinner("Running pipeline (media analysis + classify + link + graph)..."):
                     from pipeline import _run_classify, _run_link
                     from build_graph import build_graph as rebuild_graph
 
@@ -279,7 +318,7 @@ def render_capture_section() -> None:
                     rebuild_graph()
 
                 _clear_all_caches()
-                st.success("Pipeline complete! Graph updated.")
+                st.success("Pipeline complete! Graph and search index updated.")
                 st.rerun()
 
         except Exception as exc:
@@ -515,21 +554,56 @@ def render_ask_section() -> None:
             )
 
         if result.sources:
-            with st.expander(f"Sources ({len(result.sources)} notes)", expanded=False):
+            with st.expander(f"Sources ({len(result.sources)} notes & files)", expanded=False):
                 for i, src in enumerate(result.sources, 1):
                     badge = PARA_COLORS.get(src.para, "#888")
+                    media_tag = ""
+                    if getattr(src, "media_type", None):
+                        type_icons = {
+                            "image": "🖼️ Image",
+                            "audio": "🎵 Audio",
+                            "video": "🎬 Video",
+                            "document": "📄 Document",
+                            "archive": "📦 Archive",
+                        }
+                        icon_label = type_icons.get(src.media_type, "📁 File")
+                        display_name = src.original_name or src.slug
+                        media_tag = f" · <span style='background:#2a2d36;padding:2px 6px;border-radius:4px;font-size:12px;'>{icon_label}: {display_name}</span>"
+
                     st.markdown(
+                        f"<div style='margin-top:10px;margin-bottom:4px;'>"
                         f"<span style='display:inline-block;width:10px;height:10px;"
                         f"border-radius:50%;background:{badge};margin-right:6px;"
                         f"vertical-align:middle;'></span>"
                         f"<b>{i}. {src.slug}</b> "
                         f"<span style='color:#888;'>[{src.para}] "
-                        f"— score: {src.score:.3f}</span>",
+                        f"— score: {src.score:.3f}</span>"
+                        f"{media_tag}"
+                        f"</div>",
                         unsafe_allow_html=True,
                     )
                     st.caption(f"`{src.path}`")
                     if src.summary:
                         st.caption(src.summary)
+
+                    # Show media preview or download if file is present
+                    raw_ref = getattr(src, "raw_ref", None)
+                    if raw_ref:
+                        raw_file_path = PROJECT_ROOT / raw_ref
+                        if raw_file_path.exists():
+                            m_type = getattr(src, "media_type", None)
+                            if m_type == "image":
+                                st.image(str(raw_file_path), caption=src.original_name or src.slug, width=320)
+                            elif m_type == "audio":
+                                st.audio(str(raw_file_path))
+                            elif m_type in {"document", "video", "archive", "file", "text"}:
+                                with open(raw_file_path, "rb") as f_data:
+                                    st.download_button(
+                                        label=f"⬇️ Download {src.original_name or raw_file_path.name}",
+                                        data=f_data.read(),
+                                        file_name=src.original_name or raw_file_path.name,
+                                        key=f"dl_{i}_{src.note_id}",
+                                    )
 
 
 def render_graph(graph: dict) -> None:

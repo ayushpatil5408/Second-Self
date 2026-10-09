@@ -2,13 +2,21 @@
 
 import os
 import sys
+import typing
 from pathlib import Path
+
+if not hasattr(typing, "TypeGuard"):
+    try:
+        import typing_extensions
+        typing.TypeGuard = typing_extensions.TypeGuard
+    except ImportError:
+        pass
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
-MIN_PYTHON_VERSION = (3, 10)
+MIN_PYTHON_VERSION = (3, 9)
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 

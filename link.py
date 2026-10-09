@@ -12,7 +12,6 @@ from typing import Any
 
 import frontmatter
 import numpy as np
-from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from config import (
@@ -45,6 +44,9 @@ class WikiNoteEntry:
     body: str
     vector: np.ndarray | None = None
     existing_links: list[str] = field(default_factory=list)
+    media_type: str | None = None
+    original_name: str | None = None
+    raw_ref: str | None = None
 
 
 @dataclass
@@ -61,10 +63,11 @@ class LinkMatch:
 # ---------------------------------------------------------------------------
 
 @lru_cache(maxsize=1)
-def load_embedding_model() -> SentenceTransformer:
+def load_embedding_model() -> Any:
     """Load and cache the sentence-transformer model."""
     print(f"Loading embedding model: {EMBEDDING_MODEL} ...")
     try:
+        from sentence_transformers import SentenceTransformer
         model = SentenceTransformer(EMBEDDING_MODEL)
     except Exception as exc:
         raise RuntimeError(
@@ -175,6 +178,9 @@ def _collect_wiki_notes() -> list[WikiNoteEntry]:
         existing_links = [str(l) for l in existing_links]
 
         body = post.content.strip()
+        media_type = post.get("media_type")
+        original_name = post.get("original_name")
+        raw_ref = post.get("raw_ref")
 
         entries.append(WikiNoteEntry(
             note_id=note_id,
@@ -185,6 +191,9 @@ def _collect_wiki_notes() -> list[WikiNoteEntry]:
             tags=tags,
             body=body,
             existing_links=existing_links,
+            media_type=str(media_type) if media_type else None,
+            original_name=str(original_name) if original_name else None,
+            raw_ref=str(raw_ref) if raw_ref else None,
         ))
 
     return entries
