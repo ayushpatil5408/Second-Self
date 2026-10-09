@@ -442,12 +442,34 @@ def render_api_settings_section() -> None:
         )
 
 
-def render_sidebar(graph: dict) -> None:
+def render_sidebar(graph: dict, user: dict | None = None) -> None:
     """Populate the Streamlit sidebar with stats, capture form, and PARA breakdown."""
     with st.sidebar:
         st.markdown("## SecondSelf")
         st.caption("Personal AI Second Brain")
         st.markdown("---")
+
+        # --- User profile & Log Out ---
+        if user:
+            col_pic, col_name = st.columns([1, 3])
+            with col_pic:
+                pic = user.get("picture")
+                if pic:
+                    st.markdown(
+                        f"<img src='{pic}' style='width:38px;height:38px;border-radius:50%;border:1px solid #4A90D9;'>",
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    st.markdown("👤")
+            with col_name:
+                st.markdown(f"**{user.get('name', 'User')}**")
+                prov = "🔴 Google" if user.get("provider") == "google" else "✉️ Email"
+                st.caption(f"{user.get('email', '')} · `{prov}`")
+
+            from auth_ui import logout_user
+            if st.button("Log Out", use_container_width=True, key="sidebar_logout_btn"):
+                logout_user()
+            st.markdown("---")
 
         # --- Statistics ---
         if graph:
@@ -703,8 +725,15 @@ def render_graph(graph: dict) -> None:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    from auth_ui import get_current_user, render_login_page
+
+    user = get_current_user()
+    if not user:
+        render_login_page()
+        return
+
     graph = load_graph()
-    render_sidebar(graph)
+    render_sidebar(graph, user=user)
     render_ask_section()
     render_graph(graph)
 
