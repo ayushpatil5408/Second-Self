@@ -604,3 +604,58 @@ def extract_media(
         markdown_body=markdown_body,
         prompt_content=prompt_content,
     )
+
+
+def resolve_media_file(src: Any) -> tuple[str, Path | None, str]:
+    """Locate the media file on disk, category, and display name for a retrieved note or dict."""
+    from config import PROJECT_ROOT, RAW_DIR
+
+    note_id = getattr(src, "note_id", "") if hasattr(src, "note_id") else src.get("note_id", "")
+    raw_ref = (getattr(src, "raw_ref", None) if hasattr(src, "raw_ref") else src.get("raw_ref")) or ""
+    original_name = (getattr(src, "original_name", None) if hasattr(src, "original_name") else src.get("original_name")) or ""
+    body = getattr(src, "body", "") if hasattr(src, "body") else src.get("body", "")
+    slug = getattr(src, "slug", "") if hasattr(src, "slug") else src.get("slug", "media")
+    media_type = getattr(src, "media_type", None) if hasattr(src, "media_type") else src.get("media_type")
+
+    candidates: list[Path] = []
+    if raw_ref:
+        candidates.append(RAW_DIR / Path(raw_ref).name)
+        candidates.append(PROJECT_ROOT / raw_ref)
+        candidates.append(PROJECT_ROOT / "raw" / Path(raw_ref).name)
+
+    if note_id and RAW_DIR.exists():
+        candidates.extend(sorted(RAW_DIR.glob(f"*_{note_id}.*")))
+
+    if body:
+        match_img = re.search(r"!\[(.*?)\]\((.*?raw/([^\)]+))\)", body)
+        if match_img:
+            raw_img_name = match_img.group(3)
+            candidates.append(RAW_DIR / raw_img_name)
+            candidates.append(PROJECT_ROOT / "raw" / raw_img_name)
+            if not original_name:
+                original_name = match_img.group(1)
+
+        match_ref = re.search(r"raw/([a-zA-Z0-9_\-\.]+)", body)
+        if match_ref:
+            raw_file_name = match_ref.group(1)
+            candidates.append(RAW_DIR / raw_file_name)
+            candidates.append(PROJECT_ROOT / "raw" / raw_file_name)
+
+    found_path: Path | None = None
+    for p in candidates:
+        if p and p.exists() and p.is_file() and not p.name.endswith(".meta.json"):
+            found_path = p
+            break
+
+    # Resolve category
+    category = media_type
+    if not category and found_path:
+        category = get_media_category(found_path.name)
+    if not category and original_name:
+        category = get_media_category(original_name)
+    if not category and raw_ref:
+        category = get_media_category(raw_ref)
+
+    display_name = original_name or (found_path.name if found_path else slug)
+    return category or "file", found_path, display_name
+

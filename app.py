@@ -222,6 +222,10 @@ def render_capture_section() -> None:
             icon="☁️",
         )
 
+    if "uploader_rev" not in st.session_state:
+        st.session_state["uploader_rev"] = 0
+    rev = st.session_state["uploader_rev"]
+
     capture_mode = st.radio(
         "Capture type",
         ["Note", "Link", "File / Media"],
@@ -240,27 +244,27 @@ def render_capture_section() -> None:
             "New note",
             placeholder="Type a thought, idea, or snippet...",
             height=100,
-            key="capture_note_text",
+            key=f"capture_note_text_{rev}",
             label_visibility="collapsed",
         )
     elif capture_mode == "Link":
         link_url = st.text_input(
             "URL",
             placeholder="https://...",
-            key="capture_link_url",
+            key=f"capture_link_url_{rev}",
             label_visibility="collapsed",
         )
     else:
         uploaded_file = st.file_uploader(
             "Choose a file or media",
             type=None,
-            key="capture_media_file",
+            key=f"capture_media_file_{rev}",
             help="Images (PNG, JPG, WEBP), Audio (MP3, WAV, M4A), Documents (PDF, DOCX, CSV), Code, etc.",
         )
         media_caption = st.text_input(
             "Caption / Note (optional)",
             placeholder="e.g. Brainstorm diagram, Sprint voice memo, Invoice...",
-            key="capture_media_caption",
+            key=f"capture_media_caption_{rev}",
         )
 
         if uploaded_file is not None:
@@ -306,7 +310,9 @@ def render_capture_section() -> None:
                     caption=media_caption.strip(),
                 )
 
-            st.success(f"Captured -> `{record.file_path.name}`")
+            # Reset uploader key so attached file and inputs vanish on rerun
+            st.session_state["uploader_rev"] = rev + 1
+            st.session_state["last_captured_name"] = record.file_path.name
 
             if run_pipeline:
                 with st.spinner("Running pipeline (media analysis + classify + link + graph)..."):
@@ -318,7 +324,10 @@ def render_capture_section() -> None:
                     rebuild_graph()
 
                 _clear_all_caches()
-                st.success("Pipeline complete! Graph and search index updated.")
+                st.toast(f"Captured & analyzed: {record.file_path.name}", icon="✅")
+                st.rerun()
+            else:
+                st.toast(f"Captured: {record.file_path.name}", icon="✅")
                 st.rerun()
 
         except Exception as exc:
@@ -544,6 +553,78 @@ def render_ask_section() -> None:
     result = st.session_state.get("ask_result")
     if result is not None:
         st.markdown("---")
+
+        # --- Detect and showcase matched media files prominently ---
+        from media_extractor import resolve_media_file
+
+        matched_media: list[tuple[Any, str, Path, str]] = []
+        if result.sources:
+            for src in result.sources:
+                cat, f_path, d_name = resolve_media_file(src)
+                if f_path and f_path.exists() and cat in {"image", "audio", "video", "document"}:
+                    matched_media.append((src, cat, f_path, d_name))
+
+        if matched_media:
+            st.markdown("### 📸 Matched Media & Files")
+            for idx, (src, cat, f_path, d_name) in enumerate(matched_media):
+                if cat == "image":
+                    col_img, col_info = st.columns([3, 2])
+                    with col_img:
+                        st.image(str(f_path), caption=f"{d_name}", use_container_width=True)
+                    with col_info:
+                        st.markdown(f"#### 🖼️ {d_name}")
+                        badge = PARA_COLORS.get(src.para, "#888")
+                        st.markdown(
+                            f"<span style='display:inline-block;width:10px;height:10px;"
+                            f"border-radius:50%;background:{badge};margin-right:6px;"
+                            f"vertical-align:middle;'></span>"
+                            f"<b>Category:</b> {src.para}",
+                            unsafe_allow_html=True,
+                        )
+                        if src.summary:
+                            st.caption(f"**Summary:** {src.summary}")
+                        try:
+                            file_size_kb = f_path.stat().st_size / 1024
+                            st.caption(f"**File Size:** {file_size_kb:.1f} KB")
+                        except Exception:
+                            pass
+
+                        with open(f_path, "rb") as f_data:
+                            st.download_button(
+                                label=f"⬇️ Download {d_name}",
+                                data=f_data.read(),
+                                file_name=d_name,
+                                key=f"showcase_dl_{idx}_{src.note_id}",
+                                use_container_width=True,
+                            )
+                elif cat == "audio":
+                    st.markdown(f"#### 🎵 Audio: {d_name} `[{src.para}]`")
+                    st.audio(str(f_path))
+                    if src.summary:
+                        st.caption(src.summary)
+                    with open(f_path, "rb") as f_data:
+                        st.download_button(
+                            label=f"⬇️ Download Audio: {d_name}",
+                            data=f_data.read(),
+                            file_name=d_name,
+                            key=f"showcase_dl_{idx}_{src.note_id}",
+                        )
+                elif cat == "video":
+                    st.markdown(f"#### 🎬 Video: {d_name} `[{src.para}]`")
+                    st.video(str(f_path))
+                elif cat == "document":
+                    st.markdown(f"#### 📄 Document: {d_name} `[{src.para}]`")
+                    if src.summary:
+                        st.caption(src.summary)
+                    with open(f_path, "rb") as f_data:
+                        st.download_button(
+                            label=f"⬇️ Download Document: {d_name}",
+                            data=f_data.read(),
+                            file_name=d_name,
+                            key=f"showcase_dl_{idx}_{src.note_id}",
+                        )
+            st.markdown("---")
+
         st.markdown("### Answer")
         st.markdown(result.answer)
 
@@ -554,11 +635,12 @@ def render_ask_section() -> None:
             )
 
         if result.sources:
-            with st.expander(f"Sources ({len(result.sources)} notes & files)", expanded=False):
+            with st.expander(f"Sources ({len(result.sources)} notes & files)", expanded=bool(matched_media)):
                 for i, src in enumerate(result.sources, 1):
                     badge = PARA_COLORS.get(src.para, "#888")
+                    cat, f_path, d_name = resolve_media_file(src)
                     media_tag = ""
-                    if getattr(src, "media_type", None):
+                    if cat and cat in {"image", "audio", "video", "document", "archive"}:
                         type_icons = {
                             "image": "🖼️ Image",
                             "audio": "🎵 Audio",
@@ -566,9 +648,8 @@ def render_ask_section() -> None:
                             "document": "📄 Document",
                             "archive": "📦 Archive",
                         }
-                        icon_label = type_icons.get(src.media_type, "📁 File")
-                        display_name = src.original_name or src.slug
-                        media_tag = f" · <span style='background:#2a2d36;padding:2px 6px;border-radius:4px;font-size:12px;'>{icon_label}: {display_name}</span>"
+                        icon_label = type_icons.get(cat, "📁 File")
+                        media_tag = f" · <span style='background:#2a2d36;padding:2px 6px;border-radius:4px;font-size:12px;'>{icon_label}: {d_name}</span>"
 
                     st.markdown(
                         f"<div style='margin-top:10px;margin-bottom:4px;'>"
@@ -587,23 +668,19 @@ def render_ask_section() -> None:
                         st.caption(src.summary)
 
                     # Show media preview or download if file is present
-                    raw_ref = getattr(src, "raw_ref", None)
-                    if raw_ref:
-                        raw_file_path = PROJECT_ROOT / raw_ref
-                        if raw_file_path.exists():
-                            m_type = getattr(src, "media_type", None)
-                            if m_type == "image":
-                                st.image(str(raw_file_path), caption=src.original_name or src.slug, width=320)
-                            elif m_type == "audio":
-                                st.audio(str(raw_file_path))
-                            elif m_type in {"document", "video", "archive", "file", "text"}:
-                                with open(raw_file_path, "rb") as f_data:
-                                    st.download_button(
-                                        label=f"⬇️ Download {src.original_name or raw_file_path.name}",
-                                        data=f_data.read(),
-                                        file_name=src.original_name or raw_file_path.name,
-                                        key=f"dl_{i}_{src.note_id}",
-                                    )
+                    if f_path and f_path.exists():
+                        if cat == "image":
+                            st.image(str(f_path), caption=d_name, width=320)
+                        elif cat == "audio":
+                            st.audio(str(f_path))
+                        elif cat in {"document", "video", "archive", "file", "text"}:
+                            with open(f_path, "rb") as f_data:
+                                st.download_button(
+                                    label=f"⬇️ Download {d_name}",
+                                    data=f_data.read(),
+                                    file_name=d_name,
+                                    key=f"dl_{i}_{src.note_id}",
+                                )
 
 
 def render_graph(graph: dict) -> None:
