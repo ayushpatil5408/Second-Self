@@ -606,9 +606,11 @@ def extract_media(
     )
 
 
-def resolve_media_file(src: Any) -> tuple[str, Path | None, str]:
+def resolve_media_file(src: Any, raw_dir: Path | None = None) -> tuple[str, Path | None, str]:
     """Locate the media file on disk, category, and display name for a retrieved note or dict."""
     from config import PROJECT_ROOT, RAW_DIR
+
+    target_raw = raw_dir if raw_dir is not None else RAW_DIR
 
     note_id = getattr(src, "note_id", "") if hasattr(src, "note_id") else src.get("note_id", "")
     raw_ref = (getattr(src, "raw_ref", None) if hasattr(src, "raw_ref") else src.get("raw_ref")) or ""
@@ -619,10 +621,13 @@ def resolve_media_file(src: Any) -> tuple[str, Path | None, str]:
 
     candidates: list[Path] = []
     if raw_ref:
+        candidates.append(target_raw / Path(raw_ref).name)
         candidates.append(RAW_DIR / Path(raw_ref).name)
         candidates.append(PROJECT_ROOT / raw_ref)
         candidates.append(PROJECT_ROOT / "raw" / Path(raw_ref).name)
 
+    if note_id and target_raw.exists():
+        candidates.extend(sorted(target_raw.glob(f"*_{note_id}.*")))
     if note_id and RAW_DIR.exists():
         candidates.extend(sorted(RAW_DIR.glob(f"*_{note_id}.*")))
 
@@ -630,6 +635,7 @@ def resolve_media_file(src: Any) -> tuple[str, Path | None, str]:
         match_img = re.search(r"!\[(.*?)\]\((.*?raw/([^\)]+))\)", body)
         if match_img:
             raw_img_name = match_img.group(3)
+            candidates.append(target_raw / raw_img_name)
             candidates.append(RAW_DIR / raw_img_name)
             candidates.append(PROJECT_ROOT / "raw" / raw_img_name)
             if not original_name:
@@ -638,6 +644,7 @@ def resolve_media_file(src: Any) -> tuple[str, Path | None, str]:
         match_ref = re.search(r"raw/([a-zA-Z0-9_\-\.]+)", body)
         if match_ref:
             raw_file_name = match_ref.group(1)
+            candidates.append(target_raw / raw_file_name)
             candidates.append(RAW_DIR / raw_file_name)
             candidates.append(PROJECT_ROOT / "raw" / raw_file_name)
 

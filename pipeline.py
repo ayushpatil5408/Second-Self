@@ -20,11 +20,11 @@ from config import DATA_DIR, EMBEDDINGS_DIR, RAW_DIR, WIKI_DIR
 # ---------------------------------------------------------------------------
 
 
-def _run_classify(*, force: bool = False) -> tuple[int, int]:
+def _run_classify(*, force: bool = False, raw_dir: Path | None = None, wiki_dir: Path | None = None) -> tuple[int, int]:
     """Run classification on raw captures. Returns (classified_count, failure_count)."""
     from classify import get_unprocessed_raw, process_raw_file
 
-    raw_files = get_unprocessed_raw(force=force)
+    raw_files = get_unprocessed_raw(force=force, raw_dir=raw_dir, wiki_dir=wiki_dir)
     if not raw_files:
         print("  No unclassified raw captures found.")
         return 0, 0
@@ -33,7 +33,7 @@ def _run_classify(*, force: bool = False) -> tuple[int, int]:
     failures = 0
     for raw_path in raw_files:
         try:
-            result = process_raw_file(raw_path, force=force)
+            result = process_raw_file(raw_path, force=force, wiki_dir=wiki_dir)
             if result:
                 classified += 1
         except Exception as exc:
@@ -43,11 +43,23 @@ def _run_classify(*, force: bool = False) -> tuple[int, int]:
     return classified, failures
 
 
-def _run_link() -> int:
+def _run_link(wiki_dir: Path | None = None, embeddings_dir: Path | None = None) -> int:
     """Run auto-linking on all wiki notes. Returns total new links added."""
     from link import link_all_notes
 
-    return link_all_notes()
+    return link_all_notes(wiki_dir=wiki_dir, embeddings_dir=embeddings_dir)
+
+
+def run_pipeline_for_user(user_id: str, *, force: bool = False) -> tuple[int, int, int]:
+    """Run the entire pipeline (classify + link + graph) for a specific user."""
+    from build_graph import build_graph
+    from config import get_user_workspace
+
+    ws = get_user_workspace(user_id)
+    classified, failures = _run_classify(force=force, raw_dir=ws["raw_dir"], wiki_dir=ws["wiki_dir"])
+    links = _run_link(wiki_dir=ws["wiki_dir"], embeddings_dir=ws["embeddings_dir"])
+    build_graph(output_path=ws["graph_path"], wiki_dir=ws["wiki_dir"], embeddings_dir=ws["embeddings_dir"])
+    return classified, failures, links
 
 
 # ---------------------------------------------------------------------------

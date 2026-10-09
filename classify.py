@@ -314,11 +314,12 @@ def classify_capture(raw_path: Path) -> ClassificationResult:
             return _fallback_classification(raw_path)
 
 
-def get_processed_raw_refs() -> set[str]:
+def get_processed_raw_refs(wiki_dir: Path | None = None) -> set[str]:
+    target_wiki = wiki_dir if wiki_dir is not None else WIKI_DIR
     refs: set[str] = set()
-    if not WIKI_DIR.exists():
+    if not target_wiki.exists():
         return refs
-    for wiki_path in WIKI_DIR.rglob("*.md"):
+    for wiki_path in target_wiki.rglob("*.md"):
         try:
             post = frontmatter.load(wiki_path)
         except (OSError, UnicodeDecodeError, ValueError):
@@ -329,9 +330,12 @@ def get_processed_raw_refs() -> set[str]:
     return refs
 
 
-def find_wiki_note_by_raw_ref(raw_ref: str) -> Path | None:
+def find_wiki_note_by_raw_ref(raw_ref: str, wiki_dir: Path | None = None) -> Path | None:
+    target_wiki = wiki_dir if wiki_dir is not None else WIKI_DIR
     normalized = normalize_raw_ref(raw_ref)
-    for wiki_path in WIKI_DIR.rglob("*.md"):
+    if not target_wiki.exists():
+        return None
+    for wiki_path in target_wiki.rglob("*.md"):
         try:
             post = frontmatter.load(wiki_path)
         except (OSError, UnicodeDecodeError, ValueError):
@@ -341,10 +345,14 @@ def find_wiki_note_by_raw_ref(raw_ref: str) -> Path | None:
     return None
 
 
-def get_unprocessed_raw(*, force: bool = False) -> list[Path]:
-    processed = set() if force else get_processed_raw_refs()
+def get_unprocessed_raw(*, force: bool = False, raw_dir: Path | None = None, wiki_dir: Path | None = None) -> list[Path]:
+    target_raw = raw_dir if raw_dir is not None else RAW_DIR
+    target_wiki = wiki_dir if wiki_dir is not None else WIKI_DIR
+    processed = set() if force else get_processed_raw_refs(target_wiki)
     candidates: list[Path] = []
-    for path in sorted(RAW_DIR.iterdir()):
+    if not target_raw.exists():
+        return candidates
+    for path in sorted(target_raw.iterdir()):
         if not is_raw_capture(path):
             continue
         raw_ref = normalize_raw_ref(f"raw/{path.name}")
@@ -353,7 +361,8 @@ def get_unprocessed_raw(*, force: bool = False) -> list[Path]:
     return candidates
 
 
-def write_wiki_note(raw_path: Path, classification: ClassificationResult, body: str) -> Path:
+def write_wiki_note(raw_path: Path, classification: ClassificationResult, body: str, wiki_dir: Path | None = None) -> Path:
+    target_wiki = wiki_dir if wiki_dir is not None else WIKI_DIR
     capture_id = extract_capture_id(raw_path)
     raw_ref = normalize_raw_ref(f"raw/{raw_path.name}")
     created = extract_created(raw_path)
@@ -382,19 +391,20 @@ def write_wiki_note(raw_path: Path, classification: ClassificationResult, body: 
 
     post.metadata = meta_dict
 
-    wiki_path = WIKI_DIR / classification.para / f"{classification.slug}.md"
+    wiki_path = target_wiki / classification.para / f"{classification.slug}.md"
     wiki_path.parent.mkdir(parents=True, exist_ok=True)
     wiki_path.write_text(frontmatter.dumps(post), encoding="utf-8")
     return wiki_path
 
 
-def process_raw_file(raw_path: Path, *, force: bool = False) -> Path | None:
+def process_raw_file(raw_path: Path, *, force: bool = False, wiki_dir: Path | None = None) -> Path | None:
+    target_wiki = wiki_dir if wiki_dir is not None else WIKI_DIR
     raw_path = raw_path.resolve()
     if not raw_path.is_file():
         raise FileNotFoundError(f"Raw file not found: {raw_path}")
 
     raw_ref = normalize_raw_ref(f"raw/{raw_path.name}")
-    existing = find_wiki_note_by_raw_ref(raw_ref)
+    existing = find_wiki_note_by_raw_ref(raw_ref, target_wiki)
     if existing and not force:
         print(f"Skip (already classified): {raw_path.name}")
         return None
@@ -406,22 +416,27 @@ def process_raw_file(raw_path: Path, *, force: bool = False) -> Path | None:
         return None
 
     classification = classify_capture(raw_path)
-    wiki_path = write_wiki_note(raw_path, classification, body)
+    wiki_path = write_wiki_note(raw_path, classification, body, target_wiki)
 
     if existing and existing.resolve() != wiki_path.resolve():
         existing.unlink()
-        print(f"Removed old wiki note: {existing.relative_to(PROJECT_ROOT)}")
+        try:
+            print(f"Removed old wiki note: {existing.relative_to(PROJECT_ROOT)}")
+        except Exception:
+            pass
 
-    print(
-        f"Classified {raw_path.name} -> "
-        f"{wiki_path.relative_to(PROJECT_ROOT)} "
-        f"[{classification.para}]"
-    )
+    try:
+        rel_path = wiki_path.relative_to(PROJECT_ROOT)
+    except Exception:
+        rel_path = wiki_path
+    print(f"Classified {raw_path.name} -> {rel_path} [{classification.para}]")
     return wiki_path
 
 
-def process_all_unclassified(*, force: bool = False) -> list[Path]:
-    raw_files = get_unprocessed_raw(force=force)
+def process_all_unclassified(*, force: bool = False, raw_dir: Path | None = None, wiki_dir: Path | None = None) -> list[Path]:
+    target_raw = raw_dir if raw_dir is not None else RAW_DIR
+    target_wiki = wiki_dir if wiki_dir is not None else WIKI_DIR
+    raw_files = get_unprocessed_raw(force=force, raw_dir=target_raw, wiki_dir=target_wiki)
     if not raw_files:
         print("No unclassified raw captures found.")
         return []
@@ -430,7 +445,7 @@ def process_all_unclassified(*, force: bool = False) -> list[Path]:
     failures = 0
     for raw_path in raw_files:
         try:
-            wiki_path = process_raw_file(raw_path, force=force)
+            wiki_path = process_raw_file(raw_path, force=force, wiki_dir=target_wiki)
             if wiki_path:
                 results.append(wiki_path)
         except Exception as exc:

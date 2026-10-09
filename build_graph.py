@@ -127,13 +127,14 @@ def parse_wiki_note(note_path: Path) -> WikiNode | None:
     )
 
 
-def build_nodes(wiki_dir: Path) -> dict[str, WikiNode]:
+def build_nodes(wiki_dir: Path | None = None) -> dict[str, WikiNode]:
     """Walk wiki/ and return a dict of note_id -> WikiNode."""
+    target_wiki = wiki_dir if wiki_dir is not None else WIKI_DIR
     nodes: dict[str, WikiNode] = {}
-    if not wiki_dir.exists():
+    if not target_wiki.exists():
         return nodes
 
-    for note_path in sorted(wiki_dir.rglob("*.md")):
+    for note_path in sorted(target_wiki.rglob("*.md")):
         node = parse_wiki_note(note_path)
         if node:
             nodes[node.id] = node
@@ -141,9 +142,10 @@ def build_nodes(wiki_dir: Path) -> dict[str, WikiNode]:
     return nodes
 
 
-def _load_embedding(note_id: str) -> np.ndarray | None:
+def _load_embedding(note_id: str, embeddings_dir: Path | None = None) -> np.ndarray | None:
     """Load a cached embedding vector for the given note ID."""
-    npy_path = EMBEDDINGS_DIR / f"{note_id}.npy"
+    target_emb = embeddings_dir if embeddings_dir is not None else EMBEDDINGS_DIR
+    npy_path = target_emb / f"{note_id}.npy"
     if not npy_path.exists():
         return None
     try:
@@ -161,24 +163,26 @@ def _cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.dot(a, b) / (norm_a * norm_b))
 
 
-def build_edges(nodes: dict[str, WikiNode]) -> list[GraphEdge]:
+def build_edges(nodes: dict[str, WikiNode], wiki_dir: Path | None = None, embeddings_dir: Path | None = None) -> list[GraphEdge]:
     """Build edges from frontmatter ``links:`` arrays and body ``[[wikilinks]]``.
 
     Edge weights are cosine similarity scores from cached embeddings when
     available; otherwise a default weight of 1.0 is used.
     """
+    target_wiki = wiki_dir if wiki_dir is not None else WIKI_DIR
+    target_emb = embeddings_dir if embeddings_dir is not None else EMBEDDINGS_DIR
     seen: set[tuple[str, str]] = set()
     edges: list[GraphEdge] = []
 
     # Pre-load all available embeddings for weight computation
     embeddings: dict[str, np.ndarray] = {}
     for nid in nodes:
-        vec = _load_embedding(nid)
+        vec = _load_embedding(nid, target_emb)
         if vec is not None:
             embeddings[nid] = vec
 
     for nid, node in nodes.items():
-        note_path = PROJECT_ROOT / node.path
+        note_path = PROJECT_ROOT / node.path if not Path(node.path).is_absolute() else Path(node.path)
         try:
             post = frontmatter.load(note_path)
         except (OSError, UnicodeDecodeError, ValueError):
@@ -197,7 +201,7 @@ def build_edges(nodes: dict[str, WikiNode]) -> list[GraphEdge]:
         # From body wikilinks (these are slugs, resolve to IDs)
         body = post.content or ""
         for slug in extract_wikilinks(body):
-            resolved = _slug_to_note_id(WIKI_DIR, slug)
+            resolved = _slug_to_note_id(target_wiki, slug)
             if resolved and resolved in nodes and resolved != nid:
                 target_ids.add(resolved)
 
@@ -256,26 +260,35 @@ def export_json(
 # Orchestration
 # ---------------------------------------------------------------------------
 
-def build_graph(output_path: Path | None = None) -> tuple[int, int]:
+def build_graph(
+    output_path: Path | None = None,
+    wiki_dir: Path | None = None,
+    embeddings_dir: Path | None = None,
+) -> tuple[int, int]:
     """Build the full graph and export JSON.
 
     Returns:
         (node_count, edge_count)
     """
-    if output_path is None:
-        output_path = GRAPH_PATH
+    target_output = output_path if output_path is not None else GRAPH_PATH
+    target_wiki = wiki_dir if wiki_dir is not None else WIKI_DIR
+    target_emb = embeddings_dir if embeddings_dir is not None else EMBEDDINGS_DIR
 
-    nodes = build_nodes(WIKI_DIR)
+    nodes = build_nodes(target_wiki)
     if not nodes:
-        print("No wiki notes found. Run the pipeline first.")
+        print("No wiki notes found.")
         return 0, 0
 
-    edges = build_edges(nodes)
+    edges = build_edges(nodes, wiki_dir=target_wiki, embeddings_dir=target_emb)
 
-    written = export_json(nodes, edges, output_path)
+    written = export_json(nodes, edges, target_output)
 
+    try:
+        rel_path = written.relative_to(PROJECT_ROOT)
+    except Exception:
+        rel_path = written
     print(f"Graph built: {len(nodes)} node(s), {len(edges)} edge(s)")
-    print(f"  -> {written.relative_to(PROJECT_ROOT)}")
+    print(f"  -> {rel_path}")
     return len(nodes), len(edges)
 
 

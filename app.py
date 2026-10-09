@@ -161,21 +161,25 @@ var network = new vis.Network(container, data, options);
 # ---------------------------------------------------------------------------
 
 @st.cache_data(show_spinner="Loading knowledge graph...")
-def load_graph() -> dict:
-    """Load and cache data/graph.json."""
-    if not GRAPH_PATH.exists():
+def load_graph(user_id: str | None = None) -> dict:
+    """Load and cache graph.json for the current user."""
+    from config import get_user_workspace
+    graph_path = get_user_workspace(user_id)["graph_path"]
+    if not graph_path.exists():
         return {}
     try:
-        return json.loads(GRAPH_PATH.read_text(encoding="utf-8"))
+        return json.loads(graph_path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return {}
 
 
 @st.cache_resource(show_spinner="Building wiki index (first run may download model)...")
-def get_wiki_index() -> dict[str, Any]:
-    """Build and cache the wiki embedding index (heavy singleton)."""
+def get_wiki_index(user_id: str | None = None) -> dict[str, Any]:
+    """Build and cache the wiki embedding index for the current user."""
+    from config import get_user_workspace
     from link import build_wiki_index
-    return build_wiki_index()
+    ws = get_user_workspace(user_id)
+    return build_wiki_index(wiki_dir=ws["wiki_dir"], embeddings_dir=ws["embeddings_dir"])
 
 
 @st.cache_data(show_spinner="Rendering graph...")
@@ -208,7 +212,7 @@ def _clear_all_caches() -> None:
     get_wiki_index.clear()
 
 
-def render_capture_section() -> None:
+def render_capture_section(user: dict | None = None) -> None:
     """Capture new notes or links from the sidebar and optionally run the pipeline."""
     st.markdown("### Capture")
 
@@ -281,6 +285,7 @@ def render_capture_section() -> None:
                 st.video(uploaded_file)
 
     run_pipeline = st.checkbox("Run pipeline after capture", value=True, key="capture_run_pipeline")
+    user_id = user.get("id") if user else None
 
     if st.button("Capture", use_container_width=True, type="primary", key="capture_btn"):
         try:
@@ -290,14 +295,14 @@ def render_capture_section() -> None:
                     st.warning("Please enter some note text.")
                     return
                 from capture import capture_note
-                record = capture_note(text, source="streamlit")
+                record = capture_note(text, source="streamlit", user_id=user_id)
             elif capture_mode == "Link":
                 url = (link_url or "").strip()
                 if not url:
                     st.warning("Please enter a URL.")
                     return
                 from capture import capture_link
-                record = capture_link(url, source="streamlit")
+                record = capture_link(url, source="streamlit", user_id=user_id)
             else:
                 if uploaded_file is None:
                     st.warning("Please select a file to upload.")
@@ -308,6 +313,7 @@ def render_capture_section() -> None:
                     original_filename=uploaded_file.name,
                     source="streamlit",
                     caption=media_caption.strip(),
+                    user_id=user_id,
                 )
 
             # Reset uploader key so attached file and inputs vanish on rerun
@@ -316,12 +322,15 @@ def render_capture_section() -> None:
 
             if run_pipeline:
                 with st.spinner("Running pipeline (media analysis + classify + link + graph)..."):
-                    from pipeline import _run_classify, _run_link
-                    from build_graph import build_graph as rebuild_graph
-
-                    _run_classify()
-                    _run_link()
-                    rebuild_graph()
+                    if user_id:
+                        from pipeline import run_pipeline_for_user
+                        run_pipeline_for_user(user_id)
+                    else:
+                        from pipeline import _run_classify, _run_link
+                        from build_graph import build_graph as rebuild_graph
+                        _run_classify()
+                        _run_link()
+                        rebuild_graph()
 
                 _clear_all_caches()
                 st.toast(f"Captured & analyzed: {record.file_path.name}", icon="✅")
@@ -515,7 +524,7 @@ def render_sidebar(graph: dict, user: dict | None = None) -> None:
         st.markdown("---")
 
         # --- Capture section (always visible) ---
-        render_capture_section()
+        render_capture_section(user=user)
 
         st.markdown("---")
 
@@ -529,10 +538,12 @@ def render_sidebar(graph: dict, user: dict | None = None) -> None:
 # Main content
 # ---------------------------------------------------------------------------
 
-def render_ask_section() -> None:
-    """Render the ask bar and answer panel."""
+def render_ask_section(user: dict | None = None) -> None:
+    """Render the ask bar and answer panel for the current user."""
     st.markdown("# 🧠 SecondSelf")
     st.caption("Your Personal AI Second Brain — ask anything about your knowledge.")
+
+    user_id = user.get("id") if user else None
 
     # Input row (no st.form — avoids batched-input quirks)
     input_col, btn_col = st.columns([5, 1])
@@ -557,7 +568,7 @@ def render_ask_section() -> None:
         else:
             with st.spinner("Searching your notes and synthesizing an answer..."):
                 try:
-                    index = get_wiki_index()
+                    index = get_wiki_index(user_id)
                     from ask import ask as ask_question
                     active_key = st.session_state.get("groq_api_key")
                     active_model = st.session_state.get("groq_model")
@@ -577,12 +588,14 @@ def render_ask_section() -> None:
         st.markdown("---")
 
         # --- Detect and showcase matched media files prominently ---
+        from config import get_user_workspace
         from media_extractor import resolve_media_file
 
+        user_raw = get_user_workspace(user_id)["raw_dir"]
         matched_media: list[tuple[Any, str, Path, str]] = []
         if result.sources:
             for src in result.sources:
-                cat, f_path, d_name = resolve_media_file(src)
+                cat, f_path, d_name = resolve_media_file(src, raw_dir=user_raw)
                 if f_path and f_path.exists() and cat in {"image", "audio", "video", "document"}:
                     matched_media.append((src, cat, f_path, d_name))
 
@@ -732,9 +745,10 @@ def main() -> None:
         render_login_page()
         return
 
-    graph = load_graph()
+    user_id = user.get("id")
+    graph = load_graph(user_id)
     render_sidebar(graph, user=user)
-    render_ask_section()
+    render_ask_section(user=user)
     render_graph(graph)
 
 

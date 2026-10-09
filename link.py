@@ -82,11 +82,31 @@ def load_embedding_model() -> Any:
 # Embedding helpers
 # ---------------------------------------------------------------------------
 
+def _fallback_embed(text: str, dim: int = 384) -> np.ndarray:
+    """Deterministic hash embedding fallback when sentence_transformers is unavailable."""
+    import hashlib
+    words = re.findall(r"\w+", text.lower())
+    vec = np.zeros(dim, dtype=np.float32)
+    if not words:
+        return vec
+    for word in words:
+        idx = int(hashlib.md5(word.encode()).hexdigest(), 16) % dim
+        vec[idx] += 1.0
+    norm = np.linalg.norm(vec)
+    if norm > 0:
+        vec /= norm
+    return vec
+
+
 def _embed_text(text: str) -> np.ndarray:
     """Encode a single text string into a normalised vector."""
-    model = load_embedding_model()
-    vector = model.encode(text, convert_to_numpy=True, show_progress_bar=False)
-    return np.asarray(vector, dtype=np.float32)
+    try:
+        model = load_embedding_model()
+        vector = model.encode(text, convert_to_numpy=True, show_progress_bar=False)
+        return np.asarray(vector, dtype=np.float32)
+    except Exception as exc:
+        print(f"Notice: Using deterministic embedding fallback ({exc})", file=sys.stderr)
+        return _fallback_embed(text)
 
 
 def embed_note(body: str, *, summary: str = "", tags: list[str] | None = None) -> np.ndarray:
@@ -106,13 +126,14 @@ def embed_note(body: str, *, summary: str = "", tags: list[str] | None = None) -
 # Embedding cache (embeddings/{note_id}.npy)
 # ---------------------------------------------------------------------------
 
-def _cache_path(note_id: str) -> Path:
-    return EMBEDDINGS_DIR / f"{note_id}.npy"
+def _cache_path(note_id: str, embeddings_dir: Path | None = None) -> Path:
+    target_emb = embeddings_dir if embeddings_dir is not None else EMBEDDINGS_DIR
+    return target_emb / f"{note_id}.npy"
 
 
-def load_cached_embedding(note_id: str, note_path: Path) -> np.ndarray | None:
+def load_cached_embedding(note_id: str, note_path: Path, embeddings_dir: Path | None = None) -> np.ndarray | None:
     """Return cached vector if the cache file exists and is newer than the note."""
-    cache = _cache_path(note_id)
+    cache = _cache_path(note_id, embeddings_dir)
     if not cache.exists():
         return None
     try:
@@ -124,19 +145,21 @@ def load_cached_embedding(note_id: str, note_path: Path) -> np.ndarray | None:
         return None
 
 
-def save_cached_embedding(note_id: str, vector: np.ndarray) -> None:
-    EMBEDDINGS_DIR.mkdir(parents=True, exist_ok=True)
-    np.save(_cache_path(note_id), vector)
+def save_cached_embedding(note_id: str, vector: np.ndarray, embeddings_dir: Path | None = None) -> None:
+    target_emb = embeddings_dir if embeddings_dir is not None else EMBEDDINGS_DIR
+    target_emb.mkdir(parents=True, exist_ok=True)
+    np.save(_cache_path(note_id, target_emb), vector)
 
 
 def load_or_compute_embedding(note_id: str, note_path: Path, body: str,
-                              *, summary: str = "", tags: list[str] | None = None) -> np.ndarray:
+                              *, summary: str = "", tags: list[str] | None = None,
+                              embeddings_dir: Path | None = None) -> np.ndarray:
     """Load from cache or compute and cache a fresh embedding."""
-    cached = load_cached_embedding(note_id, note_path)
+    cached = load_cached_embedding(note_id, note_path, embeddings_dir)
     if cached is not None:
         return cached
     vector = embed_note(body, summary=summary, tags=tags)
-    save_cached_embedding(note_id, vector)
+    save_cached_embedding(note_id, vector, embeddings_dir)
     return vector
 
 
@@ -148,13 +171,14 @@ def _extract_slug_from_path(path: Path) -> str:
     return path.stem
 
 
-def _collect_wiki_notes() -> list[WikiNoteEntry]:
+def _collect_wiki_notes(wiki_dir: Path | None = None) -> list[WikiNoteEntry]:
     """Walk wiki/ and parse every .md file into a WikiNoteEntry."""
+    target_wiki = wiki_dir if wiki_dir is not None else WIKI_DIR
     entries: list[WikiNoteEntry] = []
-    if not WIKI_DIR.exists():
+    if not target_wiki.exists():
         return entries
 
-    for note_path in sorted(WIKI_DIR.rglob("*.md")):
+    for note_path in sorted(target_wiki.rglob("*.md")):
         try:
             post = frontmatter.load(note_path)
         except (OSError, UnicodeDecodeError, ValueError):
@@ -199,9 +223,11 @@ def _collect_wiki_notes() -> list[WikiNoteEntry]:
     return entries
 
 
-def build_wiki_index() -> dict[str, WikiNoteEntry]:
+def build_wiki_index(wiki_dir: Path | None = None, embeddings_dir: Path | None = None) -> dict[str, WikiNoteEntry]:
     """Build a dict of note_id → WikiNoteEntry with embeddings computed."""
-    entries = _collect_wiki_notes()
+    target_wiki = wiki_dir if wiki_dir is not None else WIKI_DIR
+    target_emb = embeddings_dir if embeddings_dir is not None else EMBEDDINGS_DIR
+    entries = _collect_wiki_notes(target_wiki)
     if not entries:
         return {}
 
@@ -211,6 +237,7 @@ def build_wiki_index() -> dict[str, WikiNoteEntry]:
         entry.vector = load_or_compute_embedding(
             entry.note_id, entry.path, entry.body,
             summary=entry.summary, tags=entry.tags,
+            embeddings_dir=target_emb,
         )
         index[entry.note_id] = entry
 
@@ -350,9 +377,11 @@ def link_single_note(note_path: Path, index: dict[str, WikiNoteEntry] | None = N
     return len(matches)
 
 
-def link_all_notes() -> int:
+def link_all_notes(wiki_dir: Path | None = None, embeddings_dir: Path | None = None) -> int:
     """Process every wiki note and insert links. Returns total links added."""
-    index = build_wiki_index()
+    target_wiki = wiki_dir if wiki_dir is not None else WIKI_DIR
+    target_emb = embeddings_dir if embeddings_dir is not None else EMBEDDINGS_DIR
+    index = build_wiki_index(target_wiki, target_emb)
     if not index:
         print("No wiki notes found. Run classify.py first.")
         return 0

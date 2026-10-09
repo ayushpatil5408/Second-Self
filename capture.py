@@ -75,8 +75,10 @@ def _make_record(
     source: str,
     filename: str,
     extra: dict[str, Any],
+    raw_dir: Path | None = None,
 ) -> CaptureRecord:
-    file_path = RAW_DIR / filename
+    target_dir = raw_dir if raw_dir is not None else RAW_DIR
+    file_path = target_dir / filename
     record = CaptureRecord(
         id=capture_id,
         timestamp=timestamp.isoformat(),
@@ -90,23 +92,32 @@ def _make_record(
     return record
 
 
-def save_capture(content: str, capture_type: str, source: str, ext: str = "txt", extra: dict[str, Any] | None = None) -> CaptureRecord:
+def save_capture(
+    content: str,
+    capture_type: str,
+    source: str,
+    ext: str = "txt",
+    extra: dict[str, Any] | None = None,
+    user_id: str | None = None,
+) -> CaptureRecord:
+    from config import get_user_workspace
+    raw_dir = get_user_workspace(user_id)["raw_dir"]
     if extra is None:
         extra = {}
     timestamp = datetime.now(UTC).replace(tzinfo=None)
     capture_id = generate_id()
     filename = make_filename(timestamp, capture_id, ext)
-    path = RAW_DIR / filename
+    path = raw_dir / filename
     path.write_text(content, encoding="utf-8")
-    return _make_record(capture_id, timestamp, capture_type, source, filename, extra)
+    return _make_record(capture_id, timestamp, capture_type, source, filename, extra, raw_dir=raw_dir)
 
 
-def capture_note(text: str, source: str = "cli") -> CaptureRecord:
+def capture_note(text: str, source: str = "cli", user_id: str | None = None) -> CaptureRecord:
     content = text.strip() + "\n"
-    return save_capture(content, "note", source, ext="txt", extra={"preview": content[:240]})
+    return save_capture(content, "note", source, ext="txt", extra={"preview": content[:240]}, user_id=user_id)
 
 
-def capture_link(url: str, source: str = "cli") -> CaptureRecord:
+def capture_link(url: str, source: str = "cli", user_id: str | None = None) -> CaptureRecord:
     title = _fetch_url_title(url)
     lines = [f"URL: {url}"]
     if title:
@@ -117,7 +128,7 @@ def capture_link(url: str, source: str = "cli") -> CaptureRecord:
     extra: dict[str, Any] = {"url": url}
     if title:
         extra["title"] = title
-    return save_capture(content, "link", source, ext="txt", extra=extra)
+    return save_capture(content, "link", source, ext="txt", extra=extra, user_id=user_id)
 
 
 def capture_media(
@@ -125,8 +136,12 @@ def capture_media(
     original_filename: str = "",
     source: str = "cli",
     caption: str = "",
+    user_id: str | None = None,
 ) -> CaptureRecord:
-    """Capture a file or media stream (image, audio, document, video) into raw/."""
+    """Capture a file or media stream (image, audio, document, video) into user-isolated raw/."""
+    from config import get_user_workspace
+    raw_dir = get_user_workspace(user_id)["raw_dir"]
+
     timestamp = datetime.now(UTC).replace(tzinfo=None)
     capture_id = generate_id()
 
@@ -137,7 +152,7 @@ def capture_media(
         original_name = original_filename or source_path.name
         ext = source_path.suffix.lstrip(".") or "bin"
         filename = make_filename(timestamp, capture_id, ext)
-        destination = RAW_DIR / filename
+        destination = raw_dir / filename
         shutil.copy2(source_path, destination)
         file_size = destination.stat().st_size
     else:
@@ -145,7 +160,7 @@ def capture_media(
         original_name = original_filename or f"upload_{capture_id}.bin"
         ext = Path(original_name).suffix.lstrip(".") or "bin"
         filename = make_filename(timestamp, capture_id, ext)
-        destination = RAW_DIR / filename
+        destination = raw_dir / filename
         destination.write_bytes(data_or_path)
         file_size = len(data_or_path)
 

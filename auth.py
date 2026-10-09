@@ -25,7 +25,7 @@ from typing import Any
 import requests
 from dotenv import load_dotenv
 
-from config import DATA_DIR, PROJECT_ROOT
+from config import DATA_DIR, PROJECT_ROOT, init_user_workspace
 
 USERS_FILE = DATA_DIR / "users.json"
 
@@ -109,6 +109,7 @@ def register_user(
 
     users[clean_email] = user_record
     _save_users(users)
+    init_user_workspace(user_id, display_name)
     return True, "Account created successfully!", user_record
 
 
@@ -132,6 +133,7 @@ def authenticate_user(
     if not verify_password(password, stored_hash, salt):
         return False, "Incorrect password. Please try again.", None
 
+    init_user_workspace(user["id"], user.get("name", ""))
     return True, "Login successful!", user
 
 
@@ -169,6 +171,7 @@ def authenticate_google_user(
             user["picture"] = picture
         users[clean_email] = user
         _save_users(users)
+        init_user_workspace(user["id"], user.get("name", ""))
         return user
 
     # Auto-register new Google user
@@ -189,6 +192,7 @@ def authenticate_google_user(
 
     users[clean_email] = user_record
     _save_users(users)
+    init_user_workspace(user_id, display_name)
     return user_record
 
 
@@ -232,7 +236,7 @@ def is_google_oauth_configured() -> bool:
 
 
 def get_google_auth_url(current_app_url: str = "") -> str:
-    """Construct Google OAuth redirect authorization URL."""
+    """Construct Google OAuth redirect authorization URL with account chooser."""
     client_id, _, redirect_uri = get_google_oauth_credentials()
     chosen_redirect = redirect_uri or current_app_url or "http://localhost:8501"
 
@@ -242,7 +246,7 @@ def get_google_auth_url(current_app_url: str = "") -> str:
         "response_type": "code",
         "scope": "openid email profile",
         "access_type": "offline",
-        "prompt": "consent",
+        "prompt": "select_account consent",
     }
     return f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
 

@@ -266,17 +266,10 @@ def check_and_handle_google_redirect() -> bool:
                 st.error("Google authentication failed. Please try again.")
                 st.query_params.clear()
 
-    # 2. Google Instant Demo Login
-    if st.query_params.get("demo_google"):
-        demo_email = (st.session_state.get("login_email") or "ayush.patil@gmail.com").strip()
-        if not demo_email or "@" not in demo_email:
-            demo_email = "ayush.patil@gmail.com"
-        user = authenticate_google_user(demo_email, name="Ayush Patil")
-        st.session_state["authenticated_user"] = user
+    # 2. Missing OAuth Notification
+    if st.query_params.get("missing_google"):
+        st.warning("⚠️ Google OAuth is not configured on this server. Please add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Streamlit Secrets or .env.")
         st.query_params.clear()
-        st.toast(f"Signed in with Google as {demo_email}!", icon="👋")
-        st.rerun()
-        return True
 
     return False
 
@@ -355,7 +348,7 @@ def _render_signin_card() -> None:
         if google_configured:
             target_url = get_google_auth_url()
         else:
-            target_url = "?demo_google=1"
+            target_url = "?missing_google=1"
 
         st.markdown(
             f"""
@@ -421,7 +414,7 @@ def _render_signup_card() -> None:
         if google_configured:
             target_url = get_google_auth_url()
         else:
-            target_url = "?demo_google=1"
+            target_url = "?missing_google=1"
 
         st.markdown(
             f"""
