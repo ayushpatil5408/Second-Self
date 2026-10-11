@@ -3,10 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SecondSelf — AI Second Brain</title>
+  <title>SecondSelf - Login</title>
   <link rel="stylesheet" href="loginpage.css">
-  <!-- Vis.js Network for 3D Knowledge Graph -->
-  <script src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -16,13 +14,13 @@
     body, html {
       width: 100%;
       height: 100%;
-      background: #170E17;
-      color: #FAFAFA;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       overflow: hidden;
+      background: #170E17;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
-
-    /* WebGL Canvas Background Layer */
     #particle-drift-canvas {
       position: fixed;
       top: 0;
@@ -31,874 +29,87 @@
       height: 100vh;
       z-index: 1;
       display: block;
-      background: #170E17;
-    }
-
-    /* Auth Container */
-    #auth-view {
-      position: relative;
-      z-index: 10;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      pointer-events: auto;
     }
     .login-container-wrap {
+      position: relative;
+      z-index: 10;
       display: flex;
       justify-content: center;
       align-items: center;
     }
-
-    /* Loading Overlay */
-    #loading-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(23, 14, 23, 0.88);
+    .container {
+      --login-box-color: rgba(30, 22, 32, 0.82);
+    }
+    .login-box {
+      background: var(--login-box-color);
       backdrop-filter: blur(20px);
-      z-index: 9999;
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 16px;
-    }
-    .spinner {
-      width: 48px;
-      height: 48px;
-      border: 3px solid rgba(188, 123, 185, 0.2);
-      border-top-color: #BC7BB9;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    /* =========================================================
-       DASHBOARD STYLES (When User is Authenticated)
-       ========================================================= */
-    #dashboard-view {
-      position: relative;
-      z-index: 20;
-      width: 100vw;
-      height: 100vh;
-      display: none;
-      flex-direction: column;
-      background: #0E0B12;
-    }
-
-    /* Navbar */
-    .navbar {
-      height: 60px;
-      background: rgba(24, 16, 26, 0.85);
-      backdrop-filter: blur(15px);
-      border-bottom: 1px solid rgba(188, 123, 185, 0.2);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
-      flex-shrink: 0;
-      z-index: 50;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      color: #fff;
-    }
-    .brand-badge {
-      background: linear-gradient(135deg, #BC7BB9, #663269);
-      padding: 4px 8px;
-      border-radius: 8px;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-    .nav-actions {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-    .user-profile {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: rgba(45, 29, 47, 0.6);
-      border: 1px solid rgba(188, 123, 185, 0.25);
-      padding: 4px 12px 4px 6px;
-      border-radius: 24px;
-    }
-    .user-avatar {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 1px solid #BC7BB9;
-    }
-    .user-name {
-      font-size: 13px;
-      font-weight: 600;
-      color: #FAFAFA;
-      max-width: 140px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .btn-action {
-      background: linear-gradient(135deg, #48234a 0%, #311634 100%);
-      border: 1px solid rgba(188, 123, 185, 0.3);
-      color: white;
-      padding: 7px 16px;
-      border-radius: 18px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-action:hover {
-      background: linear-gradient(135deg, #663269 0%, #48234a 100%);
-      box-shadow: 0 0 12px rgba(188, 123, 185, 0.4);
-    }
-    .btn-logout {
-      background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #aaa;
-      padding: 6px 14px;
-      border-radius: 18px;
-      font-size: 12px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    .btn-logout:hover {
-      color: #fff;
-      border-color: #ff5c5c;
-      background: rgba(255, 92, 92, 0.1);
-    }
-
-    /* Main Dashboard Layout */
-    .dashboard-body {
-      flex: 1;
-      display: flex;
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* Left Graph View */
-    .graph-pane {
-      flex: 1;
-      height: 100%;
-      position: relative;
-      background: radial-gradient(circle at center, #1b121e 0%, #0d0810 100%);
-    }
-    #network {
-      width: 100%;
-      height: 100%;
-    }
-
-    /* Top Ask Bar Overlay */
-    .ask-bar-container {
-      position: absolute;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 90%;
-      max-width: 680px;
-      z-index: 30;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .ask-input-wrap {
-      display: flex;
-      align-items: center;
-      background: rgba(28, 18, 30, 0.88);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(188, 123, 185, 0.35);
-      border-radius: 28px;
-      padding: 6px 8px 6px 20px;
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), 0 0 20px rgba(188, 123, 185, 0.15);
-    }
-    .ask-input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      outline: none;
-      color: white;
-      font-size: 15px;
-    }
-    .ask-input::placeholder {
-      color: rgba(255, 255, 255, 0.45);
-    }
-    .btn-ask {
-      background: linear-gradient(135deg, #BC7BB9, #663269);
-      color: white;
-      border: none;
-      border-radius: 20px;
-      padding: 9px 20px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-ask:hover {
-      box-shadow: 0 0 14px rgba(188, 123, 185, 0.6);
-      transform: translateY(-1px);
-    }
-
-    /* AI Response Card */
-    .ai-response-card {
-      background: rgba(26, 17, 28, 0.94);
-      backdrop-filter: blur(24px);
-      border: 1px solid rgba(188, 123, 185, 0.3);
-      border-radius: 18px;
-      padding: 20px 24px;
-      color: #eee;
-      display: none;
-      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7);
-      animation: fadeIn 0.3s ease;
-      max-height: 280px;
-      overflow-y: auto;
-    }
-    .ai-response-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      font-size: 13px;
-      color: #BC7BB9;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-    }
-    .ai-answer-text {
-      font-size: 14px;
-      line-height: 1.6;
-      color: #FAFAFA;
-      white-space: pre-line;
-    }
-    .sources-list {
-      margin-top: 14px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-    .source-pill {
-      background: rgba(188, 123, 185, 0.15);
-      border: 1px solid rgba(188, 123, 185, 0.3);
-      border-radius: 12px;
-      padding: 3px 10px;
-      font-size: 11px;
-      color: #e0b4de;
-      cursor: pointer;
-    }
-
-    /* Right Sidebar Drawer */
-    .sidebar-drawer {
-      width: 340px;
-      height: 100%;
-      background: rgba(22, 14, 24, 0.92);
-      backdrop-filter: blur(20px);
-      border-left: 1px solid rgba(188, 123, 185, 0.2);
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-      z-index: 25;
-    }
-    .drawer-section {
-      padding: 18px 22px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
-    .drawer-section h3 {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #888;
-      margin-bottom: 12px;
-    }
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 13px;
-      padding: 4px 0;
-      color: #bbb;
-    }
-    .stat-row .val {
-      font-weight: 700;
-      color: #BC7BB9;
-    }
-    .para-legend-row {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      margin-top: 6px;
-    }
-    .para-badge {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.05);
-      cursor: pointer;
-      transition: 0.2s;
-    }
-    .para-badge:hover {
-      background: rgba(255, 255, 255, 0.12);
-    }
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
-    .dot-projects { background: #4A90D9; }
-    .dot-areas { background: #50C878; }
-    .dot-resources { background: #F5A623; }
-    .dot-archives { background: #9B9B9B; }
-
-    /* Node Inspector */
-    #node-inspector {
-      flex: 1;
-      padding: 18px 22px;
-    }
-    .inspector-empty {
-      font-size: 13px;
-      color: #666;
-      font-style: italic;
-    }
-    .inspector-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 8px;
-    }
-    .inspector-meta {
-      font-size: 12px;
-      color: #BC7BB9;
-      margin-bottom: 10px;
-    }
-    .inspector-summary {
-      font-size: 13px;
-      line-height: 1.5;
-      color: #ccc;
-      margin-bottom: 12px;
-    }
-    .inspector-preview {
-      font-size: 12px;
-      line-height: 1.5;
-      color: #888;
-      border-left: 2px solid #BC7BB9;
-      padding-left: 10px;
-      max-height: 220px;
-      overflow-y: auto;
-      background: rgba(0, 0, 0, 0.2);
-      padding: 8px 10px;
-      border-radius: 0 8px 8px 0;
-    }
-
-    /* Modal for Quick Capture */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(10px);
-      z-index: 100;
-      display: none;
-      justify-content: center;
-      align-items: center;
-    }
-    .modal-box {
-      width: 90%;
-      max-width: 500px;
-      background: rgba(28, 18, 30, 0.95);
-      border: 1px solid rgba(188, 123, 185, 0.35);
-      border-radius: 20px;
-      padding: 26px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-    }
-    .modal-box h2 {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 16px;
-      color: #fff;
-    }
-    .modal-input {
-      width: 100%;
-      padding: 10px 14px;
-      background: #271929;
-      border: 1px solid rgba(188, 123, 185, 0.25);
-      border-radius: 12px;
-      color: white;
-      font-size: 14px;
-      margin-bottom: 12px;
-      outline: none;
-    }
-    .modal-input:focus {
-      border-color: #BC7BB9;
-    }
-    textarea.modal-input {
-      min-height: 100px;
-      resize: vertical;
-    }
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-8px); }
-      to { opacity: 1; transform: translateY(0); }
+      -webkit-backdrop-filter: blur(20px);
     }
   </style>
 </head>
 <body>
-
-  <!-- =========================================================
-       1. LIVE WEBGL PARTICLE DRIFT CANVAS (Active in Auth)
-       ========================================================= -->
+  <!-- Live WebGL Particle Drift Canvas -->
   <canvas id="particle-drift-canvas"></canvas>
 
-  <!-- =========================================================
-       2. AUTHENTICATION VIEW (When Logged Out)
-       ========================================================= -->
-  <div id="auth-view">
-    <div class="login-container-wrap">
-      <div class="container">
-        <div class="login-box">
-          <form class="form" onsubmit="event.preventDefault();">
-            <div class="logo"></div>
-            <span class="header">Welcome Back!</span>
-            <input type="email" id="email" placeholder="Email" class="input" required />
-            <input type="password" id="password" placeholder="Password" class="input" required />
-            <button type="submit" class="button sign-in" onclick="handleEmailSignIn(event)">Sign In</button>
-            <button type="button" class="button google-sign-in" onclick="loginWithGoogle()">
-              <svg class="icon" viewBox="-3 0 262 262" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid" fill="#000000">
-                <path d="M255.878 133.451c0-10.734-.871-18.567-2.756-26.69H130.55v48.448h71.947c-1.45 12.04-9.283 30.172-26.69 42.356l-.244 1.622 38.755 30.023 2.685.268c24.659-22.774 38.875-56.282 38.875-96.027" fill="#4285F4"></path>
-                <path d="M130.55 261.1c35.248 0 64.839-11.605 86.453-31.622l-41.196-31.913c-11.024 7.688-25.82 13.055-45.257 13.055-34.523 0-63.824-22.773-74.269-54.25l-1.531.13-40.298 31.187-.527 1.465C35.393 231.798 79.49 261.1 130.55 261.1" fill="#34A853"></path>
-                <path d="M56.281 156.37c-2.756-8.123-4.351-16.827-4.351-25.82 0-8.994 1.595-17.697 4.206-25.82l-.073-1.73L15.26 71.312l-1.335.635C5.077 89.644 0 109.517 0 130.55s5.077 40.905 13.925 58.602l42.356-32.782" fill="#FBBC05"></path>
-                <path d="M130.55 50.479c24.514 0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798 0 130.55 0 79.49 0 35.393 29.301 13.925 71.947l42.211 32.783c10.59-31.477 39.891-54.251 74.414-54.251" fill="#EB4335"></path>
-              </svg>
-              <span class="span two">Sign in with Google</span>
-            </button>
-            <p class="footer">
-              SecondSelf AI Second Brain
-              <br />
-              <span style="font-size:11px;color:rgba(255,255,255,0.4);">Vercel Native Cloud Deployment</span>
-            </p>
-          </form>
-        </div>
+  <!-- Centered Login Box -->
+  <div class="login-container-wrap">
+    <div class="container">
+      <div class="login-box">
+        <form class="form" onsubmit="event.preventDefault();">
+          <div class="logo"></div>
+          <span class="header">Welcome Back!</span>
+          <input type="email" placeholder="Email" class="input" required />
+          <input type="password" placeholder="Password" class="input" required />
+          <button type="submit" class="button sign-in">Sign In</button>
+          <button type="button" class="button google-sign-in">
+            <svg
+              class="icon"
+              viewBox="-3 0 262 262"
+              xmlns="http://www.w3.org/2000/svg"
+              preserveAspectRatio="xMidYMid"
+              fill="#000000"
+            >
+              <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+              <g
+                id="SVGRepo_tracerCarrier"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></g>
+              <g id="SVGRepo_iconCarrier">
+                <path
+                  d="M255.878 133.451c0-10.734-.871-18.567-2.756-26.69H130.55v48.448h71.947c-1.45 12.04-9.283 30.172-26.69 42.356l-.244 1.622 38.755 30.023 2.685.268c24.659-22.774 38.875-56.282 38.875-96.027"
+                  fill="#4285F4"
+                ></path>
+                <path
+                  d="M130.55 261.1c35.248 0 64.839-11.605 86.453-31.622l-41.196-31.913c-11.024 7.688-25.82 13.055-45.257 13.055-34.523 0-63.824-22.773-74.269-54.25l-1.531.13-40.298 31.187-.527 1.465C35.393 231.798 79.49 261.1 130.55 261.1"
+                  fill="#34A853"
+                ></path>
+                <path
+                  d="M56.281 156.37c-2.756-8.123-4.351-16.827-4.351-25.82 0-8.994 1.595-17.697 4.206-25.82l-.073-1.73L15.26 71.312l-1.335.635C5.077 89.644 0 109.517 0 130.55s5.077 40.905 13.925 58.602l42.356-32.782"
+                  fill="#FBBC05"
+                ></path>
+                <path
+                  d="M130.55 50.479c24.514 0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798 0 130.55 0 79.49 0 35.393 29.301 13.925 71.947l42.211 32.783c10.59-31.477 39.891-54.251 74.414-54.251"
+                  fill="#EB4335"
+                ></path>
+              </g>
+            </svg>
+            <span class="span two"> Sign in with Google </span>
+          </button>
+
+          <p class="footer">
+            Don't have an account?
+            <a href="#" class="link">Sign up, it's free!</a>
+            <br />
+            <a href="#" class="link">Forgot password?</a>
+          </p>
+        </form>
       </div>
     </div>
   </div>
 
-  <!-- =========================================================
-       3. DASHBOARD VIEW (When Authenticated on Vercel)
-       ========================================================= -->
-  <div id="dashboard-view">
-    <!-- Navbar -->
-    <header class="navbar">
-      <div class="brand">
-        <span>SecondSelf</span>
-        <span class="brand-badge">Knowledge Graph</span>
-      </div>
-      <div class="nav-actions">
-        <button class="btn-action" onclick="openCaptureModal()">+ Capture Note</button>
-        <div class="user-profile" id="user-pill">
-          <img class="user-avatar" id="nav-avatar" src="" alt="avatar">
-          <span class="user-name" id="nav-username">User</span>
-        </div>
-        <button class="btn-logout" onclick="logoutUser()">Log out</button>
-      </div>
-    </header>
-
-    <!-- Body -->
-    <div class="dashboard-body">
-      <!-- Knowledge Graph View -->
-      <div class="graph-pane">
-        <!-- Floating AI Ask Bar -->
-        <div class="ask-bar-container">
-          <div class="ask-input-wrap">
-            <input type="text" id="ask-input" class="ask-input" placeholder="Ask your Second Brain anything..." onkeydown="if(event.key==='Enter') askOracle();" />
-            <button class="btn-ask" onclick="askOracle()">Ask AI</button>
-          </div>
-          <!-- AI Response Card -->
-          <div class="ai-response-card" id="ai-response-card">
-            <div class="ai-response-header">
-              <span>🧠 ORACLE SYNTHESIS</span>
-              <span style="cursor:pointer;" onclick="closeAnswer()">✕</span>
-            </div>
-            <div class="ai-answer-text" id="ai-answer-text"></div>
-            <div class="sources-list" id="ai-sources-list"></div>
-          </div>
-        </div>
-
-        <div id="network"></div>
-      </div>
-
-      <!-- Right Inspector Sidebar -->
-      <aside class="sidebar-drawer">
-        <div class="drawer-section">
-          <h3>Graph Statistics</h3>
-          <div class="stat-row"><span>Total Nodes</span><span class="val" id="stat-nodes">19</span></div>
-          <div class="stat-row"><span>Connections</span><span class="val" id="stat-edges">22</span></div>
-          <div class="stat-row"><span>Status</span><span class="val" style="color:#50C878;">Synced</span></div>
-        </div>
-
-        <div class="drawer-section">
-          <h3>PARA Categories</h3>
-          <div class="para-legend-row">
-            <div class="para-badge" onclick="filterCategory('Projects')"><div class="dot dot-projects"></div>Projects</div>
-            <div class="para-badge" onclick="filterCategory('Areas')"><div class="dot dot-areas"></div>Areas</div>
-            <div class="para-badge" onclick="filterCategory('Resources')"><div class="dot dot-resources"></div>Resources</div>
-            <div class="para-badge" onclick="filterCategory('Archives')"><div class="dot dot-archives"></div>Archives</div>
-            <div class="para-badge" onclick="filterCategory('All')">Show All</div>
-          </div>
-        </div>
-
-        <div id="node-inspector">
-          <h3>Note Inspector</h3>
-          <p class="inspector-empty" id="inspector-empty">Click any node in the graph to inspect details.</p>
-          <div id="inspector-content" style="display:none;">
-            <div class="inspector-title" id="node-title"></div>
-            <div class="inspector-meta" id="node-meta"></div>
-            <div class="inspector-summary" id="node-summary"></div>
-            <div class="inspector-preview" id="node-preview"></div>
-          </div>
-        </div>
-      </aside>
-    </div>
-  </div>
-
-  <!-- Loading State Overlay -->
-  <div id="loading-overlay">
-    <div class="spinner"></div>
-    <p style="color:#eee;font-size:15px;font-weight:600;" id="loading-text">Authenticating with Google...</p>
-  </div>
-
-  <!-- Capture Note Modal -->
-  <div class="modal-overlay" id="capture-modal">
-    <div class="modal-box">
-      <h2>Capture to Second Brain</h2>
-      <input type="text" id="capture-title" class="modal-input" placeholder="Note Title (e.g. My Next Project)" />
-      <select id="capture-para" class="modal-input">
-        <option value="Projects">Projects (Active)</option>
-        <option value="Areas">Areas (Ongoing)</option>
-        <option value="Resources" selected>Resources (References)</option>
-        <option value="Archives">Archives (Completed)</option>
-      </select>
-      <input type="text" id="capture-tags" class="modal-input" placeholder="Tags comma-separated (e.g. ai, rag, idea)" />
-      <textarea id="capture-content" class="modal-input" placeholder="Write your notes, ideas, or paste a link here..."></textarea>
-      <div class="modal-actions">
-        <button class="btn-logout" onclick="closeCaptureModal()">Cancel</button>
-        <button class="btn-action" onclick="submitCapture()">Save to Brain</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- =========================================================
-       4. CLIENT APPLICATION LOGIC
-       ========================================================= -->
-  <script>
-    const GOOGLE_CLIENT_ID = "579960742199-dv8dr0tq77kotpq2nl5lpfjie5kjn46g.apps.googleusercontent.com";
-    let networkInstance = null;
-    let allGraphNodes = [];
-
-    // On Load: Check for OAuth Redirect Callback or Existing Session
-    window.addEventListener("DOMContentLoaded", () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get("code");
-      const oauthError = urlParams.get("error");
-
-      if (oauthError) {
-        alert("Google Sign-In returned an error: " + oauthError);
-        window.history.replaceState({}, document.title, window.location.pathname);
-        showAuthView();
-        return;
-      }
-
-      if (code) {
-        // Returned from Google OAuth
-        handleOAuthCallback(code);
-      } else {
-        const storedUser = localStorage.getItem("secondself_user");
-        if (storedUser) {
-          try {
-            renderDashboard(JSON.parse(storedUser));
-          } catch(e) {
-            showAuthView();
-          }
-        } else {
-          showAuthView();
-        }
-      }
-    });
-
-    // 1. Google OAuth Flow directly on Vercel
-    function loginWithGoogle() {
-      const redirectUri = window.location.origin + "/";
-      const authUrl = "https://accounts.google.com/o/oauth2/v2/auth?" + new URLSearchParams({
-        client_id: GOOGLE_CLIENT_ID,
-        redirect_uri: redirectUri,
-        response_type: "code",
-        scope: "openid email profile",
-        access_type: "offline",
-        prompt: "select_account consent"
-      }).toString();
-      window.location.href = authUrl;
-    }
-
-    function handleOAuthCallback(code) {
-      document.getElementById("loading-overlay").style.display = "flex";
-      document.getElementById("loading-text").innerText = "Authenticating with Google on Vercel...";
-      const redirectUri = window.location.origin + "/";
-
-      fetch(`/api/auth/google/callback?code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(redirectUri)}`)
-        .then(res => res.json())
-        .then(data => {
-          document.getElementById("loading-overlay").style.display = "none";
-          if (data.success && data.user) {
-            localStorage.setItem("secondself_user", JSON.stringify(data.user));
-            // Remove code from URL cleanly
-            window.history.replaceState({}, document.title, window.location.pathname);
-            renderDashboard(data.user);
-          } else {
-            alert("Google Sign-In Error: " + (data.error || "Could not verify credentials."));
-            window.history.replaceState({}, document.title, window.location.pathname);
-            showAuthView();
-          }
-        })
-        .catch(err => {
-          document.getElementById("loading-overlay").style.display = "none";
-          console.error(err);
-          alert("Network error exchanging Google authorization code.");
-          showAuthView();
-        });
-    }
-
-    function handleEmailSignIn(event) {
-      if (event) event.preventDefault();
-      const email = document.getElementById("email").value;
-      const pass = document.getElementById("password").value;
-      if (!email || !pass) {
-        alert("Please enter email and password.");
-        return;
-      }
-      const demoUser = {
-        name: email.split("@")[0],
-        email: email,
-        picture: "https://api.dicebear.com/7.x/initials/svg?seed=" + email
-      };
-      localStorage.setItem("secondself_user", JSON.stringify(demoUser));
-      renderDashboard(demoUser);
-    }
-
-    function logoutUser() {
-      localStorage.removeItem("secondself_user");
-      window.location.href = window.location.pathname;
-    }
-
-    function showAuthView() {
-      document.getElementById("auth-view").style.display = "flex";
-      document.getElementById("dashboard-view").style.display = "none";
-      document.getElementById("particle-drift-canvas").style.display = "block";
-    }
-
-    // 2. Render Full Dashboard View
-    function renderDashboard(user) {
-      document.getElementById("auth-view").style.display = "none";
-      document.getElementById("dashboard-view").style.display = "flex";
-      document.getElementById("particle-drift-canvas").style.display = "none";
-
-      document.getElementById("nav-avatar").src = user.picture || "https://api.dicebear.com/7.x/initials/svg?seed=User";
-      document.getElementById("nav-username").innerText = user.name || user.email || "Account";
-
-      loadKnowledgeGraph();
-    }
-
-    // 3. Vis.js Knowledge Graph Initialization
-    function loadKnowledgeGraph() {
-      fetch("/api/graph")
-        .then(res => res.json())
-        .then(data => {
-          const container = document.getElementById("network");
-          allGraphNodes = data.nodes || [];
-
-          document.getElementById("stat-nodes").innerText = allGraphNodes.length;
-          document.getElementById("stat-edges").innerText = (data.edges || []).length;
-
-          const colorMap = {
-            "Projects": "#4A90D9",
-            "Areas": "#50C878",
-            "Resources": "#F5A623",
-            "Archives": "#9B9B9B"
-          };
-
-          const visNodes = new vis.DataSet(
-            allGraphNodes.map(n => ({
-              id: n.id,
-              label: n.label,
-              title: `${n.label} (${n.para})`,
-              color: {
-                background: colorMap[n.para] || "#BC7BB9",
-                border: "#ffffff",
-                highlight: { background: "#ffffff", border: colorMap[n.para] || "#BC7BB9" }
-              },
-              shape: "dot",
-              size: 16,
-              font: { color: "#FAFAFA", size: 12, strokeWidth: 2, strokeColor: "#170E17" }
-            }))
-          );
-
-          const visEdges = new vis.DataSet(
-            (data.edges || []).map(e => ({
-              from: e.source,
-              to: e.target,
-              color: { color: "rgba(188, 123, 185, 0.45)", highlight: "#BC7BB9" },
-              width: 1.5,
-              smooth: { type: "continuous" }
-            }))
-          );
-
-          const options = {
-            physics: {
-              solver: "forceAtlas2Based",
-              forceAtlas2Based: {
-                gravitationalConstant: -35,
-                centralGravity: 0.005,
-                springLength: 100,
-                springConstant: 0.18
-              },
-              maxVelocity: 50,
-              stabilization: { iterations: 100 }
-            },
-            interaction: { hover: true, tooltipDelay: 100, zoomView: true }
-          };
-
-          networkInstance = new vis.Network(container, { nodes: visNodes, edges: visEdges }, options);
-
-          // Click node -> show inspector
-          networkInstance.on("click", (params) => {
-            if (params.nodes.length > 0) {
-              const clickedId = params.nodes[0];
-              const node = allGraphNodes.find(n => n.id === clickedId);
-              if (node) showNodeDetail(node);
-            }
-          });
-        })
-        .catch(err => console.error("Error loading graph:", err));
-    }
-
-    function showNodeDetail(node) {
-      document.getElementById("inspector-empty").style.display = "none";
-      document.getElementById("inspector-content").style.display = "block";
-      document.getElementById("node-title").innerText = node.label;
-      document.getElementById("node-meta").innerText = `PARA: ${node.para} • Tags: ${(node.tags || []).join(", ")}`;
-      document.getElementById("node-summary").innerText = node.summary || "";
-      document.getElementById("node-preview").innerText = node.content_preview || "";
-    }
-
-    function filterCategory(cat) {
-      if (!networkInstance) return;
-      if (cat === "All") {
-        networkInstance.fit();
-        return;
-      }
-      const matched = allGraphNodes.filter(n => n.para === cat).map(n => n.id);
-      if (matched.length > 0) {
-        networkInstance.selectNodes(matched);
-        networkInstance.focus(matched[0], { scale: 1.2, animation: true });
-      }
-    }
-
-    // 4. Oracle AI RAG Ask Bar
-    function askOracle() {
-      const q = document.getElementById("ask-input").value.trim();
-      if (!q) return;
-
-      const card = document.getElementById("ai-response-card");
-      const answerDiv = document.getElementById("ai-answer-text");
-      const sourcesDiv = document.getElementById("ai-sources-list");
-
-      card.style.display = "block";
-      answerDiv.innerText = "Querying your knowledge graph and synthesizing answer via Groq AI...";
-      sourcesDiv.innerHTML = "";
-
-      fetch("/api/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: json = JSON.stringify({ query: q })
-      })
-      .then(res => res.json())
-      .then(data => {
-        answerDiv.innerText = data.answer || "No answer generated.";
-        if (data.sources && data.sources.length > 0) {
-          sourcesDiv.innerHTML = "<span style='font-size:11px;color:#888;width:100%;margin-bottom:4px;'>Referenced Notes:</span>" +
-            data.sources.map(s => `<span class="source-pill" onclick="focusNodeByTitle('${s.title}')">📄 ${s.title}</span>`).join("");
-        }
-      })
-      .catch(err => {
-        answerDiv.innerText = "Error: " + err;
-      });
-    }
-
-    function closeAnswer() {
-      document.getElementById("ai-response-card").style.display = "none";
-    }
-
-    function focusNodeByTitle(title) {
-      const n = allGraphNodes.find(item => item.label === title);
-      if (n && networkInstance) {
-        networkInstance.focus(n.id, { scale: 1.5, animation: true });
-        networkInstance.selectNodes([n.id]);
-        showNodeDetail(n);
-      }
-    }
-
-    // 5. Note Capture
-    function openCaptureModal() {
-      document.getElementById("capture-modal").style.display = "flex";
-    }
-    function closeCaptureModal() {
-      document.getElementById("capture-modal").style.display = "none";
-    }
-    function submitCapture() {
-      const title = document.getElementById("capture-title").value.trim();
-      const para = document.getElementById("capture-para").value;
-      const tags = document.getElementById("capture-tags").value.split(",").map(t => t.trim()).filter(Boolean);
-      const content = document.getElementById("capture-content").value.trim();
-
-      if (!content) {
-        alert("Please enter note content.");
-        return;
-      }
-
-      fetch("/api/capture", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, para, tags, content })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          closeCaptureModal();
-          document.getElementById("capture-title").value = "";
-          document.getElementById("capture-content").value = "";
-          alert("Note captured to Second Brain!");
-          loadKnowledgeGraph();
-        } else {
-          alert("Capture error: " + data.error);
-        }
-      })
-      .catch(err => alert("Error: " + err));
-    }
-  </script>
-
-  <!-- =========================================================
-       5. WEBGL PARTICLE DRIFT SHADERS (From firstpage.12)
-       ========================================================= -->
+  <!-- WebGL Particle Drift Implementation from firstpage.12 -->
   <script>
   (function initParticleDrift() {
     const canvas = document.getElementById("particle-drift-canvas");
@@ -910,7 +121,10 @@
       depth: false,
       premultipliedAlpha: true
     });
-    if (!gl) return;
+    if (!gl) {
+      console.warn("ParticleDrift: WebGL not available");
+      return;
+    }
 
     const MAX_DPR = 2;
     const MAX_LINES = 8000;
@@ -931,17 +145,23 @@
 
     const LINE_VERT = `
       precision highp float;
-      attribute vec2 a_p0, a_p1, a_corner;
+      attribute vec2 a_p0;
+      attribute vec2 a_p1;
+      attribute vec2 a_corner;
       attribute vec3 a_shade;
       uniform vec2 uSize;
-      varying float v_alpha, v_mix, v_off, v_half;
+      varying float v_alpha;
+      varying float v_mix;
+      varying float v_off;
+      varying float v_half;
       void main(){
         vec2 d = a_p1 - a_p0;
         float len = max(length(d), 1e-5);
         vec2 nrm = vec2(-d.y, d.x) / len;
         float half_ = max(a_shade.z * 0.5, 0.35);
         float ext = half_ + 0.75;
-        vec2 p = mix(a_p0, a_p1, a_corner.x) + nrm * a_corner.y * ext;
+        vec2 p = mix(a_p0, a_p1, a_corner.x);
+        p += nrm * a_corner.y * ext;
         v_alpha = a_shade.x;
         v_mix = a_shade.y;
         v_off = a_corner.y * ext;
@@ -953,7 +173,10 @@
     const LINE_FRAG = `
       precision mediump float;
       uniform vec3 uBase, uAccent;
-      varying float v_alpha, v_mix, v_off, v_half;
+      varying float v_alpha;
+      varying float v_mix;
+      varying float v_off;
+      varying float v_half;
       void main(){
         float cov = clamp((v_half - abs(v_off)) / 0.75 + 0.5, 0.0, 1.0);
         float a = v_alpha * cov;
@@ -993,48 +216,80 @@
 
     function compile(type, src) {
       const sh = gl.createShader(type);
+      if (!sh) return null;
       gl.shaderSource(sh, src);
       gl.compileShader(sh);
+      if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+        console.error("Shader error:", gl.getShaderInfoLog(sh));
+        gl.deleteShader(sh);
+        return null;
+      }
       return sh;
     }
 
-    function linkProg(vs, fs) {
-      const p = gl.createProgram();
-      gl.attachShader(p, compile(gl.VERTEX_SHADER, vs));
-      gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fs));
-      gl.linkProgram(p);
-      return p;
+    function linkProg(vsSrc, fsSrc) {
+      const vs = compile(gl.VERTEX_SHADER, vsSrc);
+      const fs = compile(gl.FRAGMENT_SHADER, fsSrc);
+      if (!vs || !fs) return null;
+      const prog = gl.createProgram();
+      if (!prog) return null;
+      gl.attachShader(prog, vs);
+      gl.attachShader(prog, fs);
+      gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+        console.error("Program link error:", gl.getProgramInfoLog(prog));
+        return null;
+      }
+      return prog;
     }
 
     function parseColor(input, fb) {
       if (!input) return fb;
-      const c = input.replace("#", "");
-      if (c.length === 6) {
-        return [parseInt(c.slice(0, 2), 16) / 255, parseInt(c.slice(2, 4), 16) / 255, parseInt(c.slice(4, 6), 16) / 255];
+      const str = String(input).trim();
+      if (str.charAt(0) === "#") {
+        let hex = str.slice(1);
+        if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+        if (hex.length >= 6) {
+          const r = parseInt(hex.slice(0, 2), 16);
+          const g = parseInt(hex.slice(2, 4), 16);
+          const b = parseInt(hex.slice(4, 6), 16);
+          if (!isNaN(r) && !isNaN(g) && !isNaN(b)) return [r / 255, g / 255, b / 255];
+        }
       }
       return fb;
     }
 
     function rng(seed) {
-      let s = seed >>> 0;
-      return () => {
-        s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
-        return s / 4294967296;
+      let a = seed >>> 0;
+      return function() {
+        a += 0x6d2b79f5;
+        let t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
       };
     }
 
     const CORNERS = [
-      [0, -1], [1, -1], [0, 1],
-      [1, -1], [1, 1], [0, 1]
+      [0, -1], [1, -1], [1, 1],
+      [0, -1], [1, 1], [0, 1]
     ];
 
     const lineProg = linkProg(LINE_VERT, LINE_FRAG);
     const dotProg = linkProg(DOT_VERT, DOT_FRAG);
+    if (!lineProg || !dotProg) return;
 
-    const lP0 = new Float32Array(MAX_LINES * 12);
-    const lP1 = new Float32Array(MAX_LINES * 12);
-    const lCorner = new Float32Array(MAX_LINES * 12);
-    const lShade = new Float32Array(MAX_LINES * 18);
+    const locs = new Map();
+    const u = (prog, name) => {
+      const key = (prog === lineProg ? "L:" : "D:") + name;
+      if (!locs.has(key)) locs.set(key, gl.getUniformLocation(prog, name));
+      return locs.get(key);
+    };
+
+    const lP0 = new Float32Array(MAX_LINES * 6 * 2);
+    const lP1 = new Float32Array(MAX_LINES * 6 * 2);
+    const lCorner = new Float32Array(MAX_LINES * 6 * 2);
+    const lShade = new Float32Array(MAX_LINES * 6 * 3);
     for (let e = 0; e < MAX_LINES; e++) {
       for (let c = 0; c < 6; c++) {
         const k = (e * 6 + c) * 2;
@@ -1057,8 +312,13 @@
     gl.bindBuffer(gl.ARRAY_BUFFER, bShade);
     gl.bufferData(gl.ARRAY_BUFFER, lShade.byteLength, gl.DYNAMIC_DRAW);
 
-    const R = rng(20261011);
-    let nCount = 0, nx, ny, nSpd, gPos, gLit;
+    const R = rng(20260824);
+    let nCount = 0;
+    let nx = new Float32Array(0);
+    let ny = new Float32Array(0);
+    let nSpd = new Float32Array(0);
+    let gPos = new Float32Array(0);
+    let gLit = new Float32Array(0);
     const bGPos = gl.createBuffer();
     const bGLit = gl.createBuffer();
 
@@ -1081,107 +341,125 @@
     }
 
     const ptr = { x: -10000, y: -10000 };
-    window.addEventListener("pointermove", (e) => { ptr.x = e.clientX; ptr.y = e.clientY; });
-    window.addEventListener("pointerleave", () => { ptr.x = -10000; ptr.y = -10000; });
+    window.addEventListener("pointermove", (e) => {
+      ptr.x = e.clientX;
+      ptr.y = e.clientY;
+    });
+    window.addEventListener("pointerleave", () => {
+      ptr.x = -10000;
+      ptr.y = -10000;
+    });
 
     let last = performance.now();
-    let builtN = -1, builtW = 0, builtH = 0;
+    let builtN = -1;
+    let builtW = 0;
+    let builtH = 0;
 
     function render(now) {
-      if (document.getElementById("dashboard-view").style.display === "flex") {
-        requestAnimationFrame(render);
-        return;
-      }
-
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
 
       const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
-      const cw = window.innerWidth || 1200;
-      const ch = window.innerHeight || 800;
+      const cw = window.innerWidth;
+      const ch = window.innerHeight;
       const bw = Math.max(1, Math.round(cw * dpr));
       const bh = Math.max(1, Math.round(ch * dpr));
 
       if (canvas.width !== bw || canvas.height !== bh) {
         canvas.width = bw;
         canvas.height = bh;
-        gl.viewport(0, 0, bw, bh);
+      }
+      gl.viewport(0, 0, bw, bh);
+
+      if (config.density !== builtN) {
+        buildNodes(config.density, cw, ch);
+        builtN = config.density;
       }
 
-      const desiredN = Math.max(20, Math.floor((cw * ch) / (1920 * 1080) * config.density));
-      if (desiredN !== builtN || cw !== builtW || ch !== builtH) {
-        buildNodes(desiredN, cw, ch);
-        builtN = desiredN; builtW = cw; builtH = ch;
+      if (cw !== builtW || ch !== builtH) {
+        const sx = cw / Math.max(builtW || cw, 1);
+        const sy = ch / Math.max(builtH || ch, 1);
+        for (let i = 0; i < nCount; i++) {
+          nx[i] *= sx;
+          ny[i] *= sy;
+        }
+        builtW = cw;
+        builtH = ch;
       }
 
-      const rad = (config.direction * Math.PI) / 180;
-      const cosD = Math.cos(rad);
-      const sinD = Math.sin(rad);
-      const reach = 180;
-      const reach2 = reach * reach;
-      const spdFactor = config.speed;
+      const reach = 180 * (config.hover > 0 ? 1 : 0);
+      const LINKD = config.linkDistance;
+      const LINKW = config.linkThickness;
+      const th = (config.direction * Math.PI) / 180;
+      const dirX = Math.sin(th);
+      const dirY = Math.cos(th);
 
       let lines = 0;
-      const pushLine = (x0, y0, x1, y1, a0, a1, isPtr, thick) => {
+      function pushLine(x0, y0, x1, y1, a0, a1, mix, wpx) {
         if (lines >= MAX_LINES) return;
-        const o2 = lines * 12;
-        const o3 = lines * 18;
         for (let c = 0; c < 6; c++) {
-          const k2 = o2 + c * 2;
-          const k3 = o3 + c * 3;
-          lP0[k2] = x0; lP0[k2 + 1] = y0;
-          lP1[k2] = x1; lP1[k2 + 1] = y1;
-          lShade[k3] = c % 2 === 0 ? a0 : a1;
-          lShade[k3 + 1] = isPtr ? 1 : 0;
-          lShade[k3 + 2] = thick;
+          const k = (lines * 6 + c) * 2;
+          const s3 = (lines * 6 + c) * 3;
+          lP0[k] = x0;
+          lP0[k + 1] = y0;
+          lP1[k] = x1;
+          lP1[k + 1] = y1;
+          lShade[s3] = CORNERS[c][0] === 0 ? a0 : a1;
+          lShade[s3 + 1] = mix;
+          lShade[s3 + 2] = wpx;
         }
         lines++;
-      };
+      }
 
       for (let i = 0; i < nCount; i++) {
-        const s = nSpd[i] * spdFactor;
-        nx[i] += cosD * s * dt;
-        ny[i] += sinD * s * dt;
+        nx[i] += nSpd[i] * dirX * dt * config.speed;
+        ny[i] += nSpd[i] * dirY * dt * config.speed;
 
-        if (nx[i] < -EDGE) nx[i] = cw + EDGE;
-        else if (nx[i] > cw + EDGE) nx[i] = -EDGE;
-        if (ny[i] < -EDGE) ny[i] = ch + EDGE;
-        else if (ny[i] > ch + EDGE) ny[i] = -EDGE;
+        if (nx[i] < -EDGE) {
+          nx[i] = cw + EDGE;
+          ny[i] = R() * ch;
+        } else if (nx[i] > cw + EDGE) {
+          nx[i] = -EDGE;
+          ny[i] = R() * ch;
+        }
+        if (ny[i] < -EDGE) {
+          ny[i] = ch + EDGE;
+          nx[i] = R() * cw;
+        } else if (ny[i] > ch + EDGE) {
+          ny[i] = -EDGE;
+          nx[i] = R() * cw;
+        }
 
         const dx = ptr.x - nx[i];
         const dy = ptr.y - ny[i];
-        const d2 = dx * dx + dy * dy;
-        let lit = 0;
-        if (d2 < reach2) {
-          const d = Math.sqrt(d2);
-          const pull = (1 - d / reach) * 40 * config.hover;
-          nx[i] += (dx / (d + 0.001)) * pull * dt;
-          ny[i] += (dy / (d + 0.001)) * pull * dt;
-          lit = 1;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        const lit = reach > 0 && d < reach ? 1 : 0;
+        if (lit === 1) {
           const a = 0.5 * (1 - d / reach) * config.hover;
-          pushLine(nx[i], ny[i], ptr.x, ptr.y, a, a, 1, 1.0);
+          pushLine(nx[i], ny[i], ptr.x, ptr.y, a, a, 1, LINKW);
         }
         gPos[i * 2] = nx[i];
         gPos[i * 2 + 1] = ny[i];
         gLit[i] = lit;
       }
 
-      if (config.linkDistance > 0) {
-        const l2 = config.linkDistance * config.linkDistance;
+      if (LINKD > 0) {
+        const l2 = LINKD * LINKD;
         for (let i = 0; i < nCount && lines < MAX_LINES; i++) {
           for (let j = i + 1; j < nCount && lines < MAX_LINES; j++) {
             const dx = nx[i] - nx[j];
             const dy = ny[i] - ny[j];
             const dd = dx * dx + dy * dy;
             if (dd >= l2) continue;
-            const a = 0.18 * (1 - Math.sqrt(dd) / config.linkDistance);
-            pushLine(nx[i], ny[i], nx[j], ny[j], a, a, 0, 1.0);
+            const a = 0.18 * (1 - Math.sqrt(dd) / LINKD);
+            pushLine(nx[i], ny[i], nx[j], ny[j], a, a, 0, LINKW);
           }
         }
       }
 
-      gl.clearColor(0.09, 0.055, 0.09, 1.0);
+      gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.disable(gl.DEPTH_TEST);
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
@@ -1214,10 +492,15 @@
         gl.enableVertexAttribArray(aShade);
         gl.vertexAttribPointer(aShade, 3, gl.FLOAT, false, 0, 0);
 
-        gl.uniform2f(gl.getUniformLocation(lineProg, "uSize"), cw, ch);
-        gl.uniform3f(gl.getUniformLocation(lineProg, "uBase"), cb[0], cb[1], cb[2]);
-        gl.uniform3f(gl.getUniformLocation(lineProg, "uAccent"), ca[0], ca[1], ca[2]);
+        gl.uniform2f(u(lineProg, "uSize"), cw, ch);
+        gl.uniform3f(u(lineProg, "uBase"), cb[0], cb[1], cb[2]);
+        gl.uniform3f(u(lineProg, "uAccent"), ca[0], ca[1], ca[2]);
         gl.drawArrays(gl.TRIANGLES, 0, verts);
+
+        gl.disableVertexAttribArray(aP0);
+        gl.disableVertexAttribArray(aP1);
+        gl.disableVertexAttribArray(aCorner);
+        gl.disableVertexAttribArray(aShade);
       }
 
       if (nCount > 0) {
@@ -1234,13 +517,16 @@
         gl.enableVertexAttribArray(aLit);
         gl.vertexAttribPointer(aLit, 1, gl.FLOAT, false, 0, 0);
 
-        gl.uniform2f(gl.getUniformLocation(dotProg, "uSize"), cw, ch);
-        gl.uniform1f(gl.getUniformLocation(dotProg, "uDpr"), dpr);
-        gl.uniform1f(gl.getUniformLocation(dotProg, "uDot"), config.dotSize);
-        gl.uniform1f(gl.getUniformLocation(dotProg, "uRestAlpha"), 0.45);
-        gl.uniform3f(gl.getUniformLocation(dotProg, "uBase"), cb[0], cb[1], cb[2]);
-        gl.uniform3f(gl.getUniformLocation(dotProg, "uAccent"), ca[0], ca[1], ca[2]);
+        gl.uniform2f(u(dotProg, "uSize"), cw, ch);
+        gl.uniform1f(u(dotProg, "uDpr"), dpr);
+        gl.uniform1f(u(dotProg, "uDot"), config.dotSize);
+        gl.uniform1f(u(dotProg, "uRestAlpha"), 0.45);
+        gl.uniform3f(u(dotProg, "uBase"), cb[0], cb[1], cb[2]);
+        gl.uniform3f(u(dotProg, "uAccent"), ca[0], ca[1], ca[2]);
         gl.drawArrays(gl.POINTS, 0, nCount);
+
+        gl.disableVertexAttribArray(aPos);
+        gl.disableVertexAttribArray(aLit);
       }
 
       requestAnimationFrame(render);

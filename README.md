@@ -104,19 +104,10 @@ python ask.py --scores "What are my notes on machine learning?"
 ```
 
 ### 5. Launch the Web Application (Phase 4)
-
-- 🚀 **Production Web Application (Vercel)**: [https://second-self-1mbv-sigma.vercel.app/](https://second-self-1mbv-sigma.vercel.app/)
-
-Features available directly on Vercel:
-- Full WebGL live particle drift authentication UI
-- Google OAuth 2.0 native sign-in
-- Interactive 3D Vis.js Knowledge Graph
-- Groq AI Oracle query bar (`llama-3.1-8b-instant` / `openai/gpt-oss-20b`)
-- Quick capture of notes, tags, and PARA organization
-
-To run locally with Streamlit:
+Start the Streamlit web app to view the interactive graph, stats, and search interface:
 ```bash
-streamlit run app.py
+# Second Self
+[View Live Website](https://second-self-monster.streamlit.app/)
 ```
 
 ## Documentation

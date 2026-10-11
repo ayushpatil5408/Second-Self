@@ -64,7 +64,3 @@ wiki/**/*.zip
 wiki/**/*.docx
 wiki/**/*.xlsx
 wiki/**/*.pptx
-
-# User private databases and notes
-data/users/
-data/users/*

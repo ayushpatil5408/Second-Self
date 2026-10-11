@@ -1,9 +1,0 @@
-[project]
-name = "second-self"
-version = "0.1.0"
-description = "SecondSelf Web App"
-requires-python = ">=3.9"
-dependencies = []
-
-[tool.vercel]
-entrypoint = "main:app"
