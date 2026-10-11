@@ -17,6 +17,7 @@ import os
 from typing import Any
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from auth import (
     authenticate_google_user,
@@ -47,53 +48,82 @@ def _get_login_css() -> str:
 
     return f"""
 <style>
-/* Reset container padding for clean centering */
-.block-container {{
-    padding-top: 3rem !important;
-    padding-bottom: 3rem !important;
-    max-width: 520px !important;
+/* Base page styling - transparent Streamlit containers so WebGL canvas shows through */
+html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"], [data-testid="stBottom"], .main {{
+    background: transparent !important;
+    background-color: transparent !important;
 }}
 
-/* Hide sidebar and collapsed button during authentication */
-[data-testid="stSidebar"] {{
+body {{
+    background-color: #170E17 !important;
+}}
+
+/* Perfectly center the login container vertically & horizontally */
+.block-container {{
+    min-height: 90vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+    max-width: 480px !important;
+    position: relative !important;
+    z-index: 10 !important;
+}}
+
+/* Hide sidebar and chrome clutter during authentication */
+[data-testid="stSidebar"],
+[data-testid="collapsedControl"],
+[data-testid="stToolbar"],
+footer {{
     display: none !important;
 }}
-[data-testid="collapsedControl"] {{
-    display: none !important;
+
+/* Hide component iframe container so it takes 0px */
+iframe[title="streamlit_components_v1.html"],
+[data-testid="stCustomComponentV1"] {{
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    border: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }}
 
 /* User provided loginpage.css declarations */
 {raw_user_css}
 
-/* Map .container and .login-box directly onto Streamlit Form */
+/* Vertical rectangular login card matching firstpage.12 & loginpage.css */
 [data-testid="stForm"] {{
-    --form-width: 350px;
-    --login-box-color: #272727;
-    --input-color: #3a3a3a;
-    --button-color: #373737;
-    --footer-color: rgba(255, 255, 255, 0.55);
+    --form-width: 345px;
+    --login-box-color: rgba(30, 22, 32, 0.82);
+    --input-color: #2e1d2f;
+    --button-color: #3b223c;
+    --footer-color: rgba(255, 255, 255, 0.58);
     position: relative !important;
     overflow: hidden !important;
     background: var(--login-box-color) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
     border-radius: 24px !important;
     width: 100% !important;
     max-width: var(--form-width) !important;
-    margin: 1.5rem auto !important;
+    margin: auto !important;
     padding: 30px 26px !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(188, 123, 185, 0.25) !important;
     box-shadow:
-        0 4px 8px rgba(0, 0, 0, 0.25),
-        0 8px 16px rgba(0, 0, 0, 0.25),
-        0 0 8px rgba(255, 255, 255, 0.1),
-        0 0 16px rgba(255, 255, 255, 0.08),
-        inset 0 40px 60px -8px rgba(255, 255, 255, 0.12),
-        inset 4px 0 12px -6px rgba(255, 255, 255, 0.12),
+        0 12px 40px rgba(0, 0, 0, 0.6),
+        0 0 24px rgba(188, 123, 185, 0.18),
+        inset 0 40px 60px -8px rgba(188, 123, 185, 0.12),
+        inset 4px 0 12px -6px rgba(188, 123, 185, 0.12),
         inset 0 0 12px -4px rgba(255, 255, 255, 0.12) !important;
-    backdrop-filter: blur(15px) !important;
-    -webkit-backdrop-filter: blur(15px) !important;
+    z-index: 10 !important;
 }}
 
-/* Conic spinning border effect from loginpage.css */
+/* Rotating conic spinning border effect with matching purple accent */
 [data-testid="stForm"]::before {{
     content: "" !important;
     position: absolute !important;
@@ -101,9 +131,9 @@ def _get_login_css() -> str:
     z-index: 0 !important;
     background: conic-gradient(
         from 45deg,
-        transparent 75%,
-        #ffffff,
-        transparent 100%
+        transparent 70%,
+        #BC7BB9 88%,
+        #ffffff 100%
     ) !important;
     animation: spin 4s ease-in-out infinite !important;
     pointer-events: none !important;
@@ -115,12 +145,14 @@ def _get_login_css() -> str:
     }}
 }}
 
-/* Inner card background layer */
+/* Inner card background layer with frosted blur */
 [data-testid="stForm"]::after {{
     content: "" !important;
     position: absolute !important;
     inset: 2px !important;
-    background: #272727 !important;
+    background: rgba(26, 17, 27, 0.88) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
     border-radius: 22px !important;
     z-index: 1 !important;
     pointer-events: none !important;
@@ -133,33 +165,34 @@ def _get_login_css() -> str:
 }}
 
 /* Inputs */
-[data-testid="stForm"] .stTextInput {{
+[data-testid="stForm"] .stTextInput {
     margin-bottom: 6px !important;
-}}
+}
 
-[data-testid="stForm"] .stTextInput input {{
-    background-color: var(--input-color, #3a3a3a) !important;
+[data-testid="stForm"] .stTextInput input {
+    background-color: var(--input-color, #2e1d2f) !important;
     color: white !important;
     border-radius: 12px !important;
-    border: 1px solid transparent !important;
+    border: 1px solid rgba(188, 123, 185, 0.25) !important;
     padding: 10px 14px !important;
     font-size: 14px !important;
     outline: none !important;
     box-shadow: none !important;
-}}
+}
 
-[data-testid="stForm"] .stTextInput input:focus {{
-    border-color: #ffffff !important;
-}}
+[data-testid="stForm"] .stTextInput input:focus {
+    border-color: #BC7BB9 !important;
+    box-shadow: 0 0 10px rgba(188, 123, 185, 0.35) !important;
+}
 
-[data-testid="stForm"] .stTextInput label {{
+[data-testid="stForm"] .stTextInput label {
     display: none !important;
-}}
+}
 
 /* Primary Submit Button */
 [data-testid="stForm"] button[kind="primaryFormSubmit"],
 [data-testid="stForm"] button[kind="secondaryFormSubmit"],
-[data-testid="stForm"] .stButton > button {{
+[data-testid="stForm"] .stButton > button {
     width: 100% !important;
     height: 40px !important;
     border: none !important;
@@ -167,28 +200,29 @@ def _get_login_css() -> str:
     font-size: 14px !important;
     font-weight: 600 !important;
     cursor: pointer !important;
-    background: var(--button-color, #373737) !important;
+    background: linear-gradient(135deg, #48234a 0%, #311634 100%) !important;
     color: white !important;
     transition: 0.3s !important;
     box-shadow:
         inset 0px 3px 6px -4px rgba(255, 255, 255, 0.6),
-        inset 0px -3px 6px -2px rgba(0, 0, 0, 0.8) !important;
+        inset 0px -3px 6px -2px rgba(0, 0, 0, 0.8),
+        0 4px 12px rgba(0, 0, 0, 0.35) !important;
     margin-top: 6px !important;
-}}
+}
 
 [data-testid="stForm"] button[kind="primaryFormSubmit"]:hover,
 [data-testid="stForm"] button[kind="secondaryFormSubmit"]:hover,
-[data-testid="stForm"] .stButton > button:hover {{
-    background: rgba(255, 255, 255, 0.25) !important;
+[data-testid="stForm"] .stButton > button:hover {
+    background: linear-gradient(135deg, #663269 0%, #48234a 100%) !important;
     box-shadow:
         inset 0px 3px 6px rgba(255, 255, 255, 0.6),
         inset 0px -3px 6px rgba(0, 0, 0, 0.8),
-        0px 0px 8px rgba(255, 255, 255, 0.05) !important;
+        0px 0px 14px rgba(188, 123, 185, 0.4) !important;
     color: white !important;
-}}
+}
 
 /* Google Sign In Button */
-.google-sign-in-btn {{
+.google-sign-in-btn {
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
@@ -199,26 +233,28 @@ def _get_login_css() -> str:
     font-size: 14px !important;
     font-weight: 600 !important;
     cursor: pointer !important;
-    background: #373737 !important;
+    background: linear-gradient(135deg, #2e1d2f 0%, #201321 100%) !important;
+    border: 1px solid rgba(188, 123, 185, 0.25) !important;
     color: white !important;
     text-decoration: none !important;
     transition: 0.3s !important;
     box-shadow:
-        inset 0px 3px 6px -4px rgba(255, 255, 255, 0.6),
+        inset 0px 3px 6px -4px rgba(255, 255, 255, 0.5),
         inset 0px -3px 6px -2px rgba(0, 0, 0, 0.8) !important;
     margin-top: 10px !important;
     margin-bottom: 6px !important;
-}}
+}
 
-.google-sign-in-btn:hover {{
-    background: rgba(255, 255, 255, 0.25) !important;
+.google-sign-in-btn:hover {
+    background: linear-gradient(135deg, #492b4b 0%, #301b33 100%) !important;
+    border-color: #BC7BB9 !important;
     color: white !important;
     text-decoration: none !important;
     box-shadow:
         inset 0px 3px 6px rgba(255, 255, 255, 0.6),
         inset 0px -3px 6px rgba(0, 0, 0, 0.8),
-        0px 0px 8px rgba(255, 255, 255, 0.05) !important;
-}}
+        0px 0px 12px rgba(188, 123, 185, 0.35) !important;
+}
 
 .footer-nav {{
     width: 100%;
@@ -303,6 +339,12 @@ def render_login_page() -> None:
 
     # Inject visual styles
     st.markdown(_get_login_css(), unsafe_allow_html=True)
+
+    # Inject live WebGL particle drift background from particle_drift.html
+    drift_file = PROJECT_ROOT / "particle_drift.html"
+    if drift_file.exists():
+        drift_code = drift_file.read_text(encoding="utf-8")
+        components.html(drift_code, height=0, width=0)
 
     if mode == "signin":
         _render_signin_card()

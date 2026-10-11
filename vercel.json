@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "routes": [
+    {
+      "src": "/loginpage.css",
+      "dest": "/loginpage.css"
+    },
+    {
+      "src": "/particle_drift.html",
+      "dest": "/particle_drift.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/login.html"
+    }
+  ]
+}

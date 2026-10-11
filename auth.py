@@ -267,7 +267,9 @@ def exchange_google_code_for_user(code: str, redirect_uri: str) -> dict[str, Any
 
     try:
         res = requests.post(token_url, data=data, timeout=15)
-        res.raise_for_status()
+        if not res.ok:
+            print(f"Google OAuth token exchange failed [{res.status_code}]: {res.text}", file=sys.stderr)
+            return None
         token_data = res.json()
         access_token = token_data.get("access_token")
         if not access_token:
@@ -279,7 +281,9 @@ def exchange_google_code_for_user(code: str, redirect_uri: str) -> dict[str, Any
             headers={"Authorization": f"Bearer {access_token}"},
             timeout=15,
         )
-        user_res.raise_for_status()
+        if not user_res.ok:
+            print(f"Google OAuth userinfo fetch failed [{user_res.status_code}]: {user_res.text}", file=sys.stderr)
+            return None
         profile = user_res.json()
         return profile
     except Exception as exc:
