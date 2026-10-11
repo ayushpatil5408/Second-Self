@@ -1,18 +1,14 @@
 {
-  "version": 2,
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
-  "routes": [
+  "rewrites": [
     {
-      "src": "/loginpage.css",
-      "dest": "/loginpage.css"
+      "source": "/",
+      "destination": "/index.html"
     },
     {
-      "src": "/particle_drift.html",
-      "dest": "/particle_drift.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/login.html"
+      "source": "/login",
+      "destination": "/login.html"
     }
   ]
 }
