@@ -59,10 +59,10 @@
         <form class="form" onsubmit="event.preventDefault();">
           <div class="logo"></div>
           <span class="header">Welcome Back!</span>
-          <input type="email" placeholder="Email" class="input" required />
-          <input type="password" placeholder="Password" class="input" required />
-          <button type="submit" class="button sign-in" onclick="window.location.href='https://second-self-monster.streamlit.app/';">Sign In</button>
-          <button type="button" class="button google-sign-in" onclick="window.location.href='https://second-self-monster.streamlit.app/';">
+          <input type="email" id="email" placeholder="Email" class="input" required />
+          <input type="password" id="password" placeholder="Password" class="input" required />
+          <button type="submit" class="button sign-in" onclick="handleEmailSignIn(event)">Sign In</button>
+          <button type="button" class="button google-sign-in" onclick="loginWithGoogle()">
             <svg
               class="icon"
               viewBox="-3 0 262 262"
@@ -108,6 +108,34 @@
       </div>
     </div>
   </div>
+
+  <!-- Authentication Flow Scripts -->
+  <script>
+    function loginWithGoogle() {
+      const clientId = "579960742199-dv8dr0tq77kotpq2nl5lpfjie5kjn46g.apps.googleusercontent.com";
+      const redirectUri = "https://second-self-monster.streamlit.app/";
+      const authUrl = "https://accounts.google.com/o/oauth2/v2/auth?" + new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        response_type: "code",
+        scope: "openid email profile",
+        access_type: "offline",
+        prompt: "select_account consent"
+      }).toString();
+      window.location.href = authUrl;
+    }
+
+    function handleEmailSignIn(event) {
+      if (event) event.preventDefault();
+      const email = document.getElementById("email") ? document.getElementById("email").value : "";
+      const password = document.getElementById("password") ? document.getElementById("password").value : "";
+      if (!email || !password) {
+        alert("Please enter both your email and password.");
+        return;
+      }
+      window.location.href = "https://second-self-monster.streamlit.app/";
+    }
+  </script>
 
   <!-- WebGL Particle Drift Implementation from firstpage.12 -->
   <script>
