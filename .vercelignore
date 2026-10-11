@@ -16,7 +16,8 @@ requirements.txt
 .venv/
 .venv_mac/
 __pycache__/
-data/
+data/users/
+data/users.json
 raw/
 wiki/
 embeddings/
