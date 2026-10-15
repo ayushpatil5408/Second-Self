@@ -25,7 +25,14 @@ from typing import Any
 import requests
 from dotenv import load_dotenv
 
-from config import DATA_DIR, PROJECT_ROOT, init_user_workspace
+from config import (
+    DATA_DIR,
+    DEFAULT_GOOGLE_CLIENT_ID,
+    DEFAULT_GOOGLE_CLIENT_SECRET,
+    DEFAULT_GOOGLE_REDIRECT_URI,
+    PROJECT_ROOT,
+    init_user_workspace,
+)
 
 USERS_FILE = DATA_DIR / "users.json"
 
@@ -122,16 +129,17 @@ def authenticate_user(
     users = get_all_users()
 
     if clean_email not in users:
-        return False, "No account found with this email.", None
+        return False, "No account found with this email. Please click 'Create one' below to register.", None
 
     user = users[clean_email]
     if user.get("provider") == "google" and not user.get("password_hash"):
-        return False, "This account was created with Google. Please use 'Sign in with Google'.", None
+        return False, "This account was created with Google. Please use 'Sign in with Google' or your Google email.", None
 
     stored_hash = user.get("password_hash", "")
     salt = user.get("salt", "")
     if not verify_password(password, stored_hash, salt):
         return False, "Incorrect password. Please try again.", None
+
 
     init_user_workspace(user["id"], user.get("name", ""))
     return True, "Login successful!", user
@@ -204,24 +212,33 @@ def get_google_oauth_credentials() -> tuple[str, str, str]:
     """Resolve Google OAuth client_id, client_secret, redirect_uri."""
     _load_env()
 
-    client_id = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
-    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
-    redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI", "").strip()
+    client_id = os.environ.get("GOOGLE_CLIENT_ID", "").strip().strip('"').strip("'")
+    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip().strip('"').strip("'")
+    redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI", "").strip().strip('"').strip("'")
 
     # Check Streamlit secrets if running inside Streamlit
     if "streamlit" in sys.modules:
         try:
             import streamlit as st
             if not client_id and "GOOGLE_CLIENT_ID" in st.secrets:
-                client_id = str(st.secrets["GOOGLE_CLIENT_ID"]).strip()
+                client_id = str(st.secrets["GOOGLE_CLIENT_ID"]).strip().strip('"').strip("'")
             if not client_secret and "GOOGLE_CLIENT_SECRET" in st.secrets:
-                client_secret = str(st.secrets["GOOGLE_CLIENT_SECRET"]).strip()
+                client_secret = str(st.secrets["GOOGLE_CLIENT_SECRET"]).strip().strip('"').strip("'")
             if not redirect_uri and "GOOGLE_REDIRECT_URI" in st.secrets:
-                redirect_uri = str(st.secrets["GOOGLE_REDIRECT_URI"]).strip()
+                redirect_uri = str(st.secrets["GOOGLE_REDIRECT_URI"]).strip().strip('"').strip("'")
         except Exception:
             pass
 
+    # Cloud & fallback defaults
+    if not client_id:
+        client_id = DEFAULT_GOOGLE_CLIENT_ID
+    if not client_secret:
+        client_secret = DEFAULT_GOOGLE_CLIENT_SECRET
+    if not redirect_uri:
+        redirect_uri = DEFAULT_GOOGLE_REDIRECT_URI
+
     return client_id, client_secret, redirect_uri
+
 
 
 def is_google_oauth_configured() -> bool:

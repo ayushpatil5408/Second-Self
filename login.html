@@ -56,13 +56,25 @@
   <div class="login-container-wrap">
     <div class="container">
       <div class="login-box">
-        <form class="form" onsubmit="event.preventDefault();">
+        <form class="form" id="auth-form" onsubmit="handleAuthSubmit(event);">
           <div class="logo"></div>
-          <span class="header">Welcome Back!</span>
-          <input type="email" placeholder="Email" class="input" required />
-          <input type="password" placeholder="Password" class="input" required />
-          <button type="submit" class="button sign-in">Sign In</button>
-          <button type="button" class="button google-sign-in">
+          <span class="header" id="form-header">Welcome Back!</span>
+          <div id="auth-msg" style="display:none;font-size:12px;padding:8px 12px;border-radius:10px;text-align:center;width:100%;margin-bottom:8px;line-height:1.4;"></div>
+
+          <div id="signup-fields" style="display:none;width:100%;margin-bottom:6px;">
+            <input type="text" id="reg-name" placeholder="Full Name" class="input" />
+          </div>
+
+          <input type="email" id="auth-email" placeholder="Email" class="input" required />
+          <input type="password" id="auth-password" placeholder="Password" class="input" required />
+
+          <div id="signup-confirm-field" style="display:none;width:100%;margin-top:6px;">
+            <input type="password" id="reg-confirm" placeholder="Confirm Password" class="input" />
+          </div>
+
+          <button type="submit" id="submit-btn" class="button sign-in">Sign In</button>
+          
+          <button type="button" id="google-btn" class="button google-sign-in" onclick="handleGoogleSignIn();">
             <svg
               class="icon"
               viewBox="-3 0 262 262"
@@ -95,19 +107,20 @@
                 ></path>
               </g>
             </svg>
-            <span class="span two"> Sign in with Google </span>
+            <span class="span two" id="google-btn-text"> Sign in with Google </span>
           </button>
 
-          <p class="footer">
-            Don't have an account?
-            <a href="#" class="link">Sign up, it's free!</a>
+          <p class="footer" id="footer-container">
+            <span id="prompt-text">Don't have an account?</span>
+            <a href="javascript:void(0)" id="auth-toggle-link" onclick="toggleAuthMode();" class="link">Create one</a>
             <br />
-            <a href="#" class="link">Forgot password?</a>
+            <a href="javascript:void(0)" id="forgot-link" onclick="handleForgotPassword();" class="link">Forgot password?</a>
           </p>
         </form>
       </div>
     </div>
   </div>
+
 
   <!-- WebGL Particle Drift Implementation from firstpage.12 -->
   <script>
@@ -534,6 +547,149 @@
 
     requestAnimationFrame(render);
   })();
+
+  // Interactive Authentication Controller
+  let authMode = "signin";
+
+  function showMessage(msg, isError = true) {
+    const el = document.getElementById("auth-msg");
+    if (!el) return;
+    el.style.display = "block";
+    el.style.color = isError ? "#ff8787" : "#69db7c";
+    el.style.background = isError ? "rgba(255,107,107,0.18)" : "rgba(81,207,102,0.18)";
+    el.style.border = isError ? "1px solid rgba(255,107,107,0.3)" : "1px solid rgba(81,207,102,0.3)";
+    el.innerText = msg;
+  }
+
+  function clearMessage() {
+    const el = document.getElementById("auth-msg");
+    if (el) el.style.display = "none";
+  }
+
+  function toggleAuthMode() {
+    clearMessage();
+    authMode = authMode === "signin" ? "signup" : "signin";
+    const header = document.getElementById("form-header");
+    const signupFields = document.getElementById("signup-fields");
+    const confirmField = document.getElementById("signup-confirm-field");
+    const submitBtn = document.getElementById("submit-btn");
+    const googleBtnText = document.getElementById("google-btn-text");
+    const promptText = document.getElementById("prompt-text");
+    const toggleLink = document.getElementById("auth-toggle-link");
+
+    if (authMode === "signup") {
+      header.innerText = "Create Account";
+      signupFields.style.display = "block";
+      confirmField.style.display = "block";
+      submitBtn.innerText = "Create Account";
+      googleBtnText.innerText = " Sign up with Google";
+      promptText.innerText = "Already have an account?";
+      toggleLink.innerText = "Sign in";
+    } else {
+      header.innerText = "Welcome Back!";
+      signupFields.style.display = "none";
+      confirmField.style.display = "none";
+      submitBtn.innerText = "Sign In";
+      googleBtnText.innerText = " Sign in with Google";
+      promptText.innerText = "Don't have an account?";
+      toggleLink.innerText = "Create one";
+    }
+  }
+
+  function handleForgotPassword() {
+    clearMessage();
+    const email = document.getElementById("auth-email").value.trim();
+    if (!email) {
+      showMessage("Please enter your registered email address first.");
+      return;
+    }
+    showMessage("Password reset instructions have been simulated for " + email, false);
+  }
+
+  function handleAuthSubmit(e) {
+    e.preventDefault();
+    clearMessage();
+
+    const email = (document.getElementById("auth-email").value || "").trim().toLowerCase();
+    const password = document.getElementById("auth-password").value;
+
+    if (!email || !password) {
+      showMessage("Please fill in both email and password.");
+      return;
+    }
+
+    let accounts = {};
+    try {
+      accounts = JSON.parse(localStorage.getItem("secondself_registered_users") || "{}");
+    } catch(err) {
+      accounts = {};
+    }
+
+    if (authMode === "signup") {
+      const name = (document.getElementById("reg-name").value || "").trim();
+      const confirm = document.getElementById("reg-confirm").value;
+
+      if (password.length < 6) {
+        showMessage("Password must be at least 6 characters.");
+        return;
+      }
+      if (password !== confirm) {
+        showMessage("Passwords do not match.");
+        return;
+      }
+      if (accounts[email]) {
+        showMessage("An account with this email already exists. Please sign in.");
+        return;
+      }
+
+      const newUser = {
+        id: "user_" + Math.random().toString(36).substring(2, 10),
+        email: email,
+        name: name || email.split("@")[0],
+        password: password,
+        provider: "email",
+        created_at: new Date().toISOString()
+      };
+
+      accounts[email] = newUser;
+      localStorage.setItem("secondself_registered_users", JSON.stringify(accounts));
+      localStorage.setItem("secondself_active_user", JSON.stringify(newUser));
+
+      showMessage("Account created successfully! Welcome " + newUser.name + "!", false);
+      setTimeout(() => {
+        window.location.href = "app.py";
+      }, 1200);
+
+    } else {
+      // Strict sign-in validation: random text MUST NOT log in!
+      if (!accounts[email]) {
+        showMessage("❌ No account found with this email. Please click 'Create one' below to register.");
+        return;
+      }
+
+      const existingUser = accounts[email];
+      if (existingUser.password !== password) {
+        showMessage("❌ Incorrect password. Please try again.");
+        return;
+      }
+
+      localStorage.setItem("secondself_active_user", JSON.stringify(existingUser));
+      showMessage("Login successful! Welcome back, " + existingUser.name + "!", false);
+      setTimeout(() => {
+        window.location.href = "app.py";
+      }, 800);
+    }
+  }
+
+  function handleGoogleSignIn() {
+    clearMessage();
+    const clientId = atob("NTc5OTYwNzQyMTk5LWR2OGRyMHRxNzdrb3RwcTJubDVscGZqaWU1a2puNDZnLmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29t");
+    const redirectUri = encodeURIComponent("https://second-self-monster.streamlit.app/");
+    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid+email+profile&access_type=offline&prompt=select_account+consent`;
+    window.location.href = googleAuthUrl;
+  }
+
   </script>
 </body>
 </html>
+

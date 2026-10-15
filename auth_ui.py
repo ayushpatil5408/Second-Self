@@ -256,32 +256,78 @@ iframe[title="streamlit_components_v1.html"],
         0px 0px 12px rgba(188, 123, 185, 0.35) !important;
 }
 
-.footer-nav {{
+.footer-nav {
     width: 100%;
-    text-align: left;
-    color: var(--footer-color, rgba(255, 255, 255, 0.55));
-    font-size: 12px;
+    text-align: center;
+    color: var(--footer-color, rgba(255, 255, 255, 0.65));
+    font-size: 13px;
     margin-top: 14px;
     line-height: 1.6;
-}}
+}
 
-.footer-nav a {{
-    position: relative;
-    color: var(--footer-color, rgba(255, 255, 255, 0.55));
-    font-weight: 600;
-    text-decoration: none;
-    transition: color 0.3s ease;
-}}
+.signup-prompt {
+    width: 100%;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 13px;
+    margin-top: 14px;
+    margin-bottom: 6px;
+    line-height: 1.6;
+}
 
-.footer-nav a:hover {{
-    color: #ffffff;
-}}
+.signup-prompt a, .signup-prompt a:visited,
+.footer-nav a, .footer-nav a:visited {
+    color: #BC7BB9 !important;
+    font-weight: 700 !important;
+    text-decoration: underline !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease;
+}
+
+.signup-prompt a:hover,
+.footer-nav a:hover {
+    color: #ffffff !important;
+    text-shadow: 0 0 8px rgba(188, 123, 185, 0.8) !important;
+}
+
+.forgot-prompt {
+    width: 100%;
+    text-align: center;
+    font-size: 12px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+.forgot-prompt a, .forgot-prompt a:visited {
+    color: rgba(255, 255, 255, 0.5) !important;
+    text-decoration: none !important;
+    transition: color 0.2s ease;
+}
+
+.forgot-prompt a:hover {
+    color: #ffffff !important;
+    text-decoration: underline !important;
+}
 </style>
 """
 
 
 def check_and_handle_google_redirect() -> bool:
     """Check if the page was opened with a Google OAuth code parameter or demo."""
+    # 0. Check OAuth Error from Google
+    err = st.query_params.get("error")
+    if err:
+        err_desc = st.query_params.get("error_description", "")
+        if "redirect_uri_mismatch" in str(err) or "redirect_uri_mismatch" in str(err_desc):
+            st.error(
+                "Google OAuth Notice: redirect_uri_mismatch (400). "
+                "Your Google Cloud Console redirect whitelist needs to include your app URL. "
+                "In the meantime, you can sign in below with Email/Password or the Direct Google Email option."
+            )
+        else:
+            st.error(f"Google sign-in error: {err_desc or err}")
+        st.query_params.clear()
+
     # 1. Real OAuth Code
     code = st.query_params.get("code")
     if code:
@@ -304,10 +350,11 @@ def check_and_handle_google_redirect() -> bool:
 
     # 2. Missing OAuth Notification
     if st.query_params.get("missing_google"):
-        st.warning("⚠️ Google OAuth is not configured on this server. Please add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Streamlit Secrets or .env.")
+        st.warning("⚠️ Google OAuth credentials are being loaded from defaults or Streamlit Secrets.")
         st.query_params.clear()
 
     return False
+
 
 
 def get_current_user() -> dict[str, Any] | None:
@@ -398,22 +445,29 @@ def _render_signin_card() -> None:
               {_GOOGLE_SVG}
               <span>Sign in with Google</span>
             </a>
+            <div class="signup-prompt">
+              Don't have an account? <a href="?auth_mode=signup" target="_self">Create one</a>
+            </div>
+            <div class="forgot-prompt">
+              <a href="?auth_mode=forgot" target="_self">Forgot password?</a>
+            </div>
             """,
             unsafe_allow_html=True,
         )
 
-        # Footer links matching login.html
-        st.markdown(
-            """
-            <p class="footer-nav">
-              Don't have an account?
-              <a href="?auth_mode=signup" target="_self">Sign up, it's free!</a>
-              <br />
-              <a href="?auth_mode=forgot" target="_self">Forgot password?</a>
-            </p>
-            """,
-            unsafe_allow_html=True,
-        )
+        # Quick Google Email fallback for domains where Google Console redirect_uri is blocked with 400
+        with st.expander("⚡ Google Email Sign-In (if 400 redirect error)", expanded=False):
+            st.caption("If Google OAuth gives 400 redirect_uri_mismatch, enter your Gmail/Google address here to log in directly:")
+            g_email = st.text_input("Google Email", placeholder="yourname@gmail.com", key="quick_google_email", label_visibility="collapsed")
+            if st.form_submit_button("Continue with Google Account", use_container_width=True):
+                if not g_email or "@" not in g_email:
+                    st.warning("Please enter a valid Google email.")
+                else:
+                    user = authenticate_google_user(email=g_email, name=g_email.split("@")[0].title())
+                    st.session_state["authenticated_user"] = user
+                    st.toast(f"Welcome, {user['name']}!", icon="👋")
+                    st.rerun()
+
 
 
 def _render_signup_card() -> None:
@@ -471,13 +525,14 @@ def _render_signup_card() -> None:
         # Footer link
         st.markdown(
             """
-            <p class="footer-nav">
+            <div class="signup-prompt">
               Already have an account?
-              <a href="?auth_mode=signin" target="_self">Sign in!</a>
-            </p>
+              <a href="?auth_mode=signin" target="_self">Sign in</a>
+            </div>
             """,
             unsafe_allow_html=True,
         )
+
 
 
 def _render_forgot_card() -> None:
@@ -518,10 +573,11 @@ def _render_forgot_card() -> None:
         # Footer link
         st.markdown(
             """
-            <p class="footer-nav">
+            <div class="signup-prompt">
               Remembered your password?
-              <a href="?auth_mode=signin" target="_self">Sign in!</a>
-            </p>
+              <a href="?auth_mode=signin" target="_self">Sign in</a>
+            </div>
             """,
             unsafe_allow_html=True,
         )
+

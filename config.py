@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import os
 import sys
 import typing
@@ -34,6 +35,17 @@ RAG_TOP_K = 5
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 DEFAULT_LLM_MODEL = "llama-3.1-8b-instant"
 LLM_MODEL = os.environ.get("LLM_MODEL", DEFAULT_LLM_MODEL)
+
+# API and OAuth credentials resolved from environment or Streamlit secrets
+DEFAULT_GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+
+# Default Google OAuth credentials
+DEFAULT_GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+DEFAULT_GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+DEFAULT_GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", "https://second-self-monster.streamlit.app/")
+
+
+
 
 
 def _check_python_version() -> None:

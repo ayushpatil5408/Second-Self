@@ -14,7 +14,13 @@ from dotenv import load_dotenv
 from groq import Groq
 from sklearn.metrics.pairwise import cosine_similarity
 
-from config import LLM_MODEL, PROJECT_ROOT, RAG_TOP_K, WIKI_DIR
+from config import (
+    DEFAULT_GROQ_API_KEY,
+    LLM_MODEL,
+    PROJECT_ROOT,
+    RAG_TOP_K,
+    WIKI_DIR,
+)
 from link import (
     WikiNoteEntry,
     _embed_text,
@@ -106,7 +112,12 @@ def resolve_groq_api_key(api_key: str | None = None) -> str | None:
     if env_key and env_key not in DUMMY_API_KEYS:
         return env_key
 
+    # Cloud & fallback default: ensure working key on Streamlit Cloud
+    if DEFAULT_GROQ_API_KEY and DEFAULT_GROQ_API_KEY not in DUMMY_API_KEYS:
+        return DEFAULT_GROQ_API_KEY
+
     return None
+
 
 
 def validate_groq_api_key(api_key: str) -> tuple[bool, str]:

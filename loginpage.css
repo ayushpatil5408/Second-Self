@@ -207,11 +207,12 @@
 
 .footer .link {
   position: relative;
-  color: var(--footer-color);
+  color: #BC7BB9;
   font-weight: 600;
-  text-decoration: none;
+  text-decoration: underline;
   transition: color 0.3s ease;
 }
+
 
 .footer .link::after {
   content: "";

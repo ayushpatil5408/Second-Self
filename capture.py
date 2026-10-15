@@ -180,7 +180,8 @@ def capture_media(
         extra["preview"] = f"Captured {category}: {original_name}"
 
     capture_type = "media" if category in {"image", "audio", "video"} else "file"
-    return _make_record(capture_id, timestamp, capture_type, source, filename, extra)
+    return _make_record(capture_id, timestamp, capture_type, source, filename, extra, raw_dir=raw_dir)
+
 
 
 def capture_file(path: str, source: str = "cli", caption: str = "") -> CaptureRecord:

@@ -229,96 +229,129 @@ def render_capture_section(user: dict | None = None) -> None:
     if "uploader_rev" not in st.session_state:
         st.session_state["uploader_rev"] = 0
     rev = st.session_state["uploader_rev"]
+    user_id = user.get("id") if user else None
 
-    capture_mode = st.radio(
-        "Capture type",
-        ["Note", "Link", "File / Media"],
-        horizontal=True,
-        key="capture_mode",
-        label_visibility="collapsed",
-    )
+    # Three prominent, clearly visible tabs for capture
+    tab_note, tab_link, tab_media = st.tabs(["📝 Note", "🔗 Link", "📁 Attach Media"])
 
     note_text = None
+    note_file = None
     link_url = None
-    uploaded_file = None
+    media_file = None
     media_caption = ""
+    action_type = None
 
-    if capture_mode == "Note":
+    with tab_note:
         note_text = st.text_area(
             "New note",
             placeholder="Type a thought, idea, or snippet...",
-            height=100,
+            height=90,
             key=f"capture_note_text_{rev}",
             label_visibility="collapsed",
         )
-    elif capture_mode == "Link":
+        note_file = st.file_uploader(
+            "📎 Optional: attach an image or file",
+            key=f"note_attach_file_{rev}",
+            help="Optionally attach an image, PDF, or document alongside this note",
+        )
+        if note_file is not None:
+            st.caption(f"📎 Attached: `{note_file.name}` ({note_file.size / 1024:.1f} KB)")
+        if st.button("Capture Note", use_container_width=True, type="primary", key=f"btn_cap_note_{rev}"):
+            action_type = "note"
+
+    with tab_link:
         link_url = st.text_input(
             "URL",
             placeholder="https://...",
             key=f"capture_link_url_{rev}",
             label_visibility="collapsed",
         )
-    else:
-        uploaded_file = st.file_uploader(
-            "Choose a file or media",
+        if st.button("Capture Link", use_container_width=True, type="primary", key=f"btn_cap_link_{rev}"):
+            action_type = "link"
+
+    with tab_media:
+        st.caption("Upload images, audio recordings, PDFs, or documents directly into your Second Brain:")
+        media_file = st.file_uploader(
+            "Upload media or file",
             type=None,
             key=f"capture_media_file_{rev}",
-            help="Images (PNG, JPG, WEBP), Audio (MP3, WAV, M4A), Documents (PDF, DOCX, CSV), Code, etc.",
+            label_visibility="collapsed",
+            help="Images (PNG, JPG, WEBP, GIF), Audio (MP3, WAV, M4A), PDF, Word, Code, Data",
         )
         media_caption = st.text_input(
             "Caption / Note (optional)",
-            placeholder="e.g. Brainstorm diagram, Sprint voice memo, Invoice...",
+            placeholder="e.g. Brainstorm sketch, Sprint voice memo, Invoice...",
             key=f"capture_media_caption_{rev}",
         )
 
-        if uploaded_file is not None:
+        if media_file is not None:
             from media_extractor import get_media_category
-            cat = get_media_category(uploaded_file.name)
-            file_kb = uploaded_file.size / 1024
-            st.caption(f"📁 **{uploaded_file.name}** ({file_kb:.1f} KB) · `{cat}`")
+            cat = get_media_category(media_file.name)
+            file_kb = media_file.size / 1024
+            st.caption(f"📁 **{media_file.name}** ({file_kb:.1f} KB) · `{cat}`")
 
             if cat == "image":
-                st.image(uploaded_file, caption=uploaded_file.name, use_container_width=True)
+                st.image(media_file, caption=media_file.name, use_container_width=True)
             elif cat == "audio":
-                st.audio(uploaded_file)
+                st.audio(media_file)
             elif cat == "video":
-                st.video(uploaded_file)
+                st.video(media_file)
 
-    run_pipeline = st.checkbox("Run pipeline after capture", value=True, key="capture_run_pipeline")
-    user_id = user.get("id") if user else None
+        if st.button("Upload & Capture File", use_container_width=True, type="primary", key=f"btn_cap_media_{rev}"):
+            action_type = "media"
 
-    if st.button("Capture", use_container_width=True, type="primary", key="capture_btn"):
+    run_pipeline = st.checkbox("Run AI pipeline after capture", value=True, key="capture_run_pipeline")
+
+    if action_type:
         try:
-            if capture_mode == "Note":
+            records = []
+            if action_type == "note":
                 text = (note_text or "").strip()
-                if not text:
-                    st.warning("Please enter some note text.")
+                if not text and note_file is None:
+                    st.warning("Please enter some note text or attach a file.")
                     return
-                from capture import capture_note
-                record = capture_note(text, source="streamlit", user_id=user_id)
-            elif capture_mode == "Link":
+                if text:
+                    from capture import capture_note
+                    rec = capture_note(text, source="streamlit", user_id=user_id)
+                    records.append(rec)
+                if note_file is not None:
+                    from capture import capture_media
+                    rec_media = capture_media(
+                        note_file.getvalue(),
+                        original_filename=note_file.name,
+                        source="streamlit",
+                        caption=f"Attached to note: {text[:60]}" if text else "",
+                        user_id=user_id,
+                    )
+                    records.append(rec_media)
+
+            elif action_type == "link":
                 url = (link_url or "").strip()
                 if not url:
                     st.warning("Please enter a URL.")
                     return
                 from capture import capture_link
-                record = capture_link(url, source="streamlit", user_id=user_id)
-            else:
-                if uploaded_file is None:
+                rec = capture_link(url, source="streamlit", user_id=user_id)
+                records.append(rec)
+
+            elif action_type == "media":
+                if media_file is None:
                     st.warning("Please select a file to upload.")
                     return
                 from capture import capture_media
-                record = capture_media(
-                    uploaded_file.getvalue(),
-                    original_filename=uploaded_file.name,
+                rec = capture_media(
+                    media_file.getvalue(),
+                    original_filename=media_file.name,
                     source="streamlit",
                     caption=media_caption.strip(),
                     user_id=user_id,
                 )
+                records.append(rec)
 
-            # Reset uploader key so attached file and inputs vanish on rerun
+            # Advance uploader revision to reset fields
             st.session_state["uploader_rev"] = rev + 1
-            st.session_state["last_captured_name"] = record.file_path.name
+            if records:
+                st.session_state["last_captured_name"] = records[0].file_path.name
 
             if run_pipeline:
                 with st.spinner("Running pipeline (media analysis + classify + link + graph)..."):
@@ -333,14 +366,15 @@ def render_capture_section(user: dict | None = None) -> None:
                         rebuild_graph()
 
                 _clear_all_caches()
-                st.toast(f"Captured & analyzed: {record.file_path.name}", icon="✅")
+                st.toast("Captured & analyzed successfully!", icon="✅")
                 st.rerun()
             else:
-                st.toast(f"Captured: {record.file_path.name}", icon="✅")
+                st.toast("Captured successfully!", icon="✅")
                 st.rerun()
 
         except Exception as exc:
             st.error(f"Capture failed: {exc}")
+
 
 
 def _save_api_key_to_env(api_key: str, model: str) -> None:
@@ -580,7 +614,24 @@ def render_ask_section(user: dict | None = None) -> None:
                         model=active_model,
                     )
                 except Exception as exc:
-                    st.error(f"Query error: {exc}")
+                    err_str = str(exc)
+                    if "GROQ_API_KEY" in err_str or "api_key" in err_str.lower() or "401" in err_str:
+                        st.warning("⚠️ **Groq API Key Not Configured**")
+                        st.info("To ask questions and get AI answers, enter your Groq API key below (or add it in your Streamlit Cloud Secrets):")
+                        with st.form("inline_groq_config_form"):
+                            entered_key = st.text_input("Groq API Key", type="password", placeholder="gsk_...", label_visibility="collapsed")
+                            if st.form_submit_button("Save Key & Run Query", type="primary"):
+                                if entered_key.strip():
+                                    st.session_state["groq_api_key"] = entered_key.strip()
+                                    os.environ["GROQ_API_KEY"] = entered_key.strip()
+                                    _save_api_key_to_env(entered_key.strip(), LLM_MODEL)
+                                    st.success("API key saved! Rerunning query...")
+                                    st.rerun()
+                                else:
+                                    st.error("Please enter a valid Groq API key.")
+                    else:
+                        st.error(f"Query error: {exc}")
+
 
     # Render any previous or just-computed answer
     result = st.session_state.get("ask_result")
