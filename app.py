@@ -805,3 +805,16 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+# ---------------------------------------------------------------------------
+# Vercel Serverless Entrypoint Compatibility
+# ---------------------------------------------------------------------------
+def handler(environ, start_response):
+    """Compatibility handler so Vercel detects a valid WSGI entrypoint if scanned."""
+    start_response("200 OK", [("Content-Type", "text/plain; charset=utf-8")])
+    return [b"SecondSelf is live!"]
+
+
+app = application = handler
+

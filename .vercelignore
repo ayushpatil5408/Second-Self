@@ -1,0 +1,24 @@
+# Ignore heavy Python backend files from Vercel Serverless Function scanner
+app.py
+ask.py
+auth.py
+auth_ui.py
+build_graph.py
+capture.py
+classify.py
+config.py
+link.py
+media_extractor.py
+pipeline.py
+requirements.txt
+
+# Local environments and databases
+.venv/
+.venv_mac/
+__pycache__/
+data/
+raw/
+wiki/
+embeddings/
+docs/
+.streamlit/
